@@ -47,7 +47,6 @@
 
   const fmtInt    = (n) => (n ?? 0).toLocaleString("en-US");
   const fmtPct    = (n) => `${(n ?? 0).toFixed(1)}%`;
-  const fmtUsd    = (n) => `$${(n ?? 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
   const fmtReward = (r) => (r == null ? "—" : Number(r).toFixed(2));
   const cssVar    = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
@@ -124,8 +123,6 @@
         sub: `${fmtInt(p.total_traces || 0)} trials run` },
       { label: "Total tokens", value: fmtInt(totalTok),
         sub: `${fmtInt(k.total_input_tokens || 0)} in · ${fmtInt(k.total_output_tokens || 0)} out` },
-      { label: "Total cost", value: fmtUsd(k.cost_usd_total),
-        sub: `${fmtUsd(k.cost_usd_per_task)} / task` },
     ];
     clear(host);
     for (const c of cards) {
