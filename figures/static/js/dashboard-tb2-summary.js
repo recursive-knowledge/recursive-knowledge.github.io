@@ -24,7 +24,7 @@
   // Some datasets (e.g. ARC) auto-derive the per-gen insights rather than
   // hand-curating them; surface that distinction in the labels.
   const isAutoDerived = () => !!((state.payload || {}).highlights || {}).auto_derived;
-  const insightLabel  = () => (isAutoDerived() ? "Auto-picked insight" : "Curated insight");
+  const insightLabel  = () => (isAutoDerived() ? "Featured insight" : "Curated insight");
   const roundsLabel   = () => (isAutoDerived() ? "generations" : "curation rounds");
 
   // ====================================================================== DOM
@@ -49,6 +49,17 @@
   const fmtInt = (n) => (n ?? 0).toLocaleString("en-US");
   const fmtPct = (n) => `${(n ?? 0).toFixed(1)}%`;
   const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  // Some auto-picked insight texts arrive hard-truncated at the source (capped
+  // mid-word). Don't show a dangling fragment: trim back to the last full word
+  // and append an ellipsis so it reads as "a little was elided".
+  const _insightDisplay = (s) => {
+    if (!s) return "";
+    const t = s.trim();
+    if (/[.!?"')\]]$/.test(t)) return t;          // ends cleanly — leave it
+    const cut = t.replace(/\s+\S*$/, "").replace(/[ ,;:]+$/, "");
+    return (cut || t) + "…";
+  };
 
   const _firstSentence = (s, max = 120) => {
     if (!s) return "";
@@ -197,7 +208,7 @@
         el("span", { class: "centerpiece-meta" }, `${ins.confidence || "?"} confidence · ${ins.evidence_count} evidence`),
       ));
       insBlock.appendChild(el("blockquote", { class: "centerpiece-insight-text" },
-        ins.full_text || ins.headline || ""));
+        _insightDisplay(ins.full_text || ins.headline || "")));
       if (ins.applies_when) {
         insBlock.appendChild(el("div", { class: "centerpiece-insight-applies" }, `applies when: ${ins.applies_when}`));
       }
@@ -228,7 +239,6 @@
             `${t.n_failed_before_solve} prior failed attempts`));
         }
         card.appendChild(tagrow);
-        if (t.note) card.appendChild(el("p", { class: "centerpiece-task-note" }, t.note));
         list.appendChild(card);
       }
       tasks.appendChild(list);
