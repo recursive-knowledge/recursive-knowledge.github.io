@@ -568,7 +568,9 @@
     if (t < ACT1_END) return t < A1_SOLVE_TICK ? ACT1.preCumulative : ACT1.postCumulative;
     if (t < ACT2_END) {
       const { idx, p, leadin } = a2GenAt(t - ACT1_END);
-      if (leadin || idx < 0) return 0;
+      // During the rewind lead-in, hold Act 1's final count so the header counter
+      // doesn't flash to zero before the replay (and its caption) is visible.
+      if (leadin || idx < 0) return ACT1.postCumulative;
       const prev = idx === 0 ? 0 : TB2_GENS[idx - 1].cumulative;
       return Math.round(prev + ease(p) * (TB2_GENS[idx].cumulative - prev));
     }

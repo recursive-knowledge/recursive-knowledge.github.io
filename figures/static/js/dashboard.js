@@ -148,7 +148,7 @@
       p.appendChild(document.createTextNode(` ${label}`));
       return p;
     };
-    host.appendChild(pill("avg shell actions / task", String(rs.avg_actions_per_task)));
+    host.appendChild(pill("avg shell actions / trial", String(rs.avg_actions_per_task)));
     host.appendChild(el("span", { class: "glance-sep" }));
     host.appendChild(pill("trials with a trace", fmtInt(rs.n_trials_with_trace)));
     host.appendChild(el("span", { class: "glance-sep" }));
@@ -207,11 +207,11 @@
     if (cleaned.length <= max) return cleaned;
     // Trim to max, then back up to the last space (or comma/semicolon) so we
     // don't cut a word in half.
-    const window = cleaned.slice(0, max + 1);
+    const seg = cleaned.slice(0, max + 1);
     let cut = Math.max(
-      window.lastIndexOf(" "),
-      window.lastIndexOf(","),
-      window.lastIndexOf(";"),
+      seg.lastIndexOf(" "),
+      seg.lastIndexOf(","),
+      seg.lastIndexOf(";"),
     );
     if (cut < 40) cut = max;  // very long single word — just hard-cut.
     return cleaned.slice(0, cut).replace(/[ ,;]+$/, "") + "…";
@@ -549,7 +549,11 @@
 
   const setActiveTab = (id) => {
     state.activeTab = id;
-    for (const btn of $$(".tab-btn")) btn.classList.toggle("active", btn.dataset.tab === id);
+    for (const btn of $$(".tab-btn")) {
+      const on = btn.dataset.tab === id;
+      btn.classList.toggle("active", on);
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+    }
     for (const p of $$(".tab-panel")) p.classList.toggle("active", p.dataset.tab === id);
     renderActiveTaskTab();
   };
@@ -570,7 +574,8 @@
 
   // ====================================================================== Boot
   const wireFilters = () => {
-    $("#search-input").addEventListener("input", (e) => {
+    const searchInput = $("#search-input");
+    if (searchInput) searchInput.addEventListener("input", (e) => {
       state.search = e.target.value; onFiltersChanged();
     });
     for (const pill of $$(".pill[data-status]")) {
