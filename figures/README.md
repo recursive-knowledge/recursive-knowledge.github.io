@@ -1,29 +1,8 @@
-# Project Website &mdash; Knowledge-Centric Self-Improvement
+# Figures subtree &mdash; Knowledge-Centric Self-Improvement
 
-Static landing page for the paper.
-
-## Layout
-
-```
-website/
-  index.html
-  static/
-    css/style.css
-    images/         # figures sourced from ../../Swarm-COLM-2026/figures/
-```
-
-## Preview locally
-
-```bash
-cd website
-python3 -m http.server 8000
-# open http://localhost:8000
-```
-
-## Deploy
-
-Push the `website/` contents to a `gh-pages` branch or copy them into a
-GitHub Pages repo such as `xuefei-wang.github.io/knowledge-centric-si/`.
+Figures hub, interactive figure, and dashboards. See the repo-root `README.md`
+for the overall layout and local-preview instructions (serve from the repo root
+with `python3 -m http.server 8000`, then open `/figures/`).
 
 ## Figures
 
@@ -46,11 +25,11 @@ versions that appear inside the method-section figure.
 Re-render the PDFs to transparent PNG via Ghostscript:
 
 ```bash
-cd website/static/images
+cd figures/static/images
 for f in main framework arc2_example tb2_example; do
   gs -dQUIET -dNOPAUSE -dBATCH -sDEVICE=pngalpha -r200 \
      -sOutputFile="${f}.png" \
-     "../../../Swarm-COLM-2026/figures/${f}.pdf"
+     "/path/to/paper/figures/${f}.pdf"
 done
 ```
 

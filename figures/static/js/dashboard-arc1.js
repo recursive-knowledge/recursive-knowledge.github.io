@@ -62,8 +62,11 @@
   const classifyStatus = (task) => {
     if (task.resolved) return "resolved";
     const v = task.verifier_exit_code, a = task.agent_exit_code;
+    const hasExitCodes = ("verifier_exit_code" in task) || ("agent_exit_code" in task);
     const s = (task.trial_status || task.status || "").toLowerCase();
-    if (s.includes("error") || s.includes("infra") || s.includes("verifier_did_not_produce") || v == null || a == null) return "infra";
+    // Only treat a missing exit code as "infra" when the dataset carries exit
+    // codes at all — ARC traces don't, so a null there is not an infra signal.
+    if (s.includes("error") || s.includes("infra") || s.includes("verifier_did_not_produce") || (hasExitCodes && (v == null || a == null))) return "infra";
     return "failed";
   };
   const statusLabel = (s) =>
@@ -156,7 +159,7 @@
       p.appendChild(document.createTextNode(` ${label}`));
       return p;
     };
-    host.appendChild(pill("avg shell actions / task", String(rs.avg_actions_per_task)));
+    host.appendChild(pill("avg shell actions / trial", String(rs.avg_actions_per_task)));
     host.appendChild(el("span", { class: "glance-sep" }));
     host.appendChild(pill("trials with a trace", fmtInt(rs.n_trials_with_trace)));
     host.appendChild(el("span", { class: "glance-sep" }));
@@ -215,11 +218,11 @@
     if (cleaned.length <= max) return cleaned;
     // Trim to max, then back up to the last space (or comma/semicolon) so we
     // don't cut a word in half.
-    const window = cleaned.slice(0, max + 1);
+    const seg = cleaned.slice(0, max + 1);
     let cut = Math.max(
-      window.lastIndexOf(" "),
-      window.lastIndexOf(","),
-      window.lastIndexOf(";"),
+      seg.lastIndexOf(" "),
+      seg.lastIndexOf(","),
+      seg.lastIndexOf(";"),
     );
     if (cut < 40) cut = max;  // very long single word — just hard-cut.
     return cleaned.slice(0, cut).replace(/[ ,;]+$/, "") + "…";
@@ -632,7 +635,11 @@
 
   const setActiveTab = (id) => {
     state.activeTab = id;
-    for (const btn of $$(".tab-btn")) btn.classList.toggle("active", btn.dataset.tab === id);
+    for (const btn of $$(".tab-btn")) {
+      const on = btn.dataset.tab === id;
+      btn.classList.toggle("active", on);
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+    }
     for (const p of $$(".tab-panel")) p.classList.toggle("active", p.dataset.tab === id);
     renderActiveTaskTab();
   };
@@ -653,7 +660,8 @@
 
   // ====================================================================== Boot
   const wireFilters = () => {
-    $("#search-input").addEventListener("input", (e) => {
+    const searchInput = $("#search-input");
+    if (searchInput) searchInput.addEventListener("input", (e) => {
       state.search = e.target.value; onFiltersChanged();
     });
     for (const pill of $$(".pill[data-status]")) {
@@ -663,7 +671,21 @@
         onFiltersChanged();
       });
     }
-    $$(".tab-btn").forEach((b) => b.addEventListener("click", () => setActiveTab(b.dataset.tab)));
+    const tabBtns = $$(".tab-btn");
+    tabBtns.forEach((b, i) => {
+      b.addEventListener("click", () => setActiveTab(b.dataset.tab));
+      b.addEventListener("keydown", (e) => {
+        let n = -1;
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") n = (i + 1) % tabBtns.length;
+        else if (e.key === "ArrowLeft" || e.key === "ArrowUp") n = (i - 1 + tabBtns.length) % tabBtns.length;
+        else if (e.key === "Home") n = 0;
+        else if (e.key === "End") n = tabBtns.length - 1;
+        if (n < 0) return;
+        e.preventDefault();
+        tabBtns[n].focus();
+        setActiveTab(tabBtns[n].dataset.tab);
+      });
+    });
     const slider = $("#gen-slider");
     if (slider) {
       slider.addEventListener("input", () => {
@@ -716,7 +738,7 @@
       state.payload = await r.json();
       console.log(`[dashboard] loaded ${state.payload.total_tasks} tasks, ${state.payload.total_traces} trials`);
     } catch (err) {
-      showError(`Could not load tb2_haiku.json: ${err.message}. Did you run scripts/build_tb2_dashboard.py yet?`);
+      showError(`Could not load ${DATA_URL}: ${err.message}. Did you run scripts/build_arc_dashboard.py yet?`);
       return;
     }
     safely("renderMeta",              () => renderMeta());

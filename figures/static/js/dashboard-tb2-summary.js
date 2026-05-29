@@ -21,6 +21,12 @@
     selectedGen: null,
   };
 
+  // Some datasets (e.g. ARC) auto-derive the per-gen insights rather than
+  // hand-curating them; surface that distinction in the labels.
+  const isAutoDerived = () => !!((state.payload || {}).highlights || {}).auto_derived;
+  const insightLabel  = () => (isAutoDerived() ? "Auto-picked insight" : "Curated insight");
+  const roundsLabel   = () => (isAutoDerived() ? "generations" : "curation rounds");
+
   // ====================================================================== DOM
   const $  = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -48,8 +54,8 @@
     if (!s) return "";
     const cleaned = s.trim().replace(/\s+/g, " ");
     if (cleaned.length <= max) return cleaned;
-    const window = cleaned.slice(0, max + 1);
-    let cut = Math.max(window.lastIndexOf(" "), window.lastIndexOf(","), window.lastIndexOf(";"));
+    const seg = cleaned.slice(0, max + 1);
+    let cut = Math.max(seg.lastIndexOf(" "), seg.lastIndexOf(","), seg.lastIndexOf(";"));
     if (cut < 40) cut = max;
     return cleaned.slice(0, cut).replace(/[ ,;]+$/, "") + "…";
   };
@@ -70,7 +76,7 @@
       clear(strip);
       strip.appendChild(el("span", { class: "summary-headline-main" }, fmtPct(k.solved_pct)));
       strip.appendChild(el("span", { class: "summary-headline-sub" },
-        `${k.solved} / ${p.total_tasks} solved · ${gens} curation rounds`));
+        `${k.solved} / ${p.total_tasks} solved · ${gens} ${roundsLabel()}`));
     }
     // Subtitle arc updated from real data
     const grows = p.generations || [];
@@ -79,7 +85,7 @@
       const last  = grows[grows.length - 1]?.macro_pass_ratio;
       if (first != null && last != null) {
         const arc = $("#summary-arc");
-        if (arc) arc.textContent = `${Math.round(first * 100)}% → ${Math.round(last * 100)}%`;
+        if (arc) arc.textContent = `${(first * 100).toFixed(1)}% → ${(last * 100).toFixed(1)}%`;
       }
     }
   };
@@ -113,6 +119,7 @@
       KCSICharts.timeline(host, gens, {
         total: p.total_tasks || 1, height: 220,
         selectedGen: state.selectedGen,
+        flatBars: true,  // generation-by-generation summary: don't colorize bars by count
         onSelect: (g) => setSelectedGen(g),
       });
     }
@@ -146,7 +153,7 @@
         el("span", { class: "evo-gen" }, `G${gen}`),
         el("span", { class: "evo-delta" }, dCount > 0 ? `+${dCount} solved` : "—"),
       ));
-      card.appendChild(el("div", { class: "evo-section" }, "Curated insight"));
+      card.appendChild(el("div", { class: "evo-section" }, insightLabel()));
       card.appendChild(el("div", { class: "evo-headline" + (ins ? "" : " empty") }, headline));
       host.appendChild(card);
     }
@@ -186,7 +193,7 @@
     if (ins) {
       const insBlock = el("article", { class: "centerpiece-insight" });
       insBlock.appendChild(el("div", { class: "centerpiece-insight-head" },
-        el("span", { class: "centerpiece-tag" }, "Curated insight"),
+        el("span", { class: "centerpiece-tag" }, insightLabel()),
         el("span", { class: "centerpiece-meta" }, `${ins.confidence || "?"} confidence · ${ins.evidence_count} evidence`),
       ));
       insBlock.appendChild(el("blockquote", { class: "centerpiece-insight-text" },
@@ -259,7 +266,7 @@
       console.log(`[summary] loaded ${state.payload.total_tasks} tasks, ${state.payload.total_traces} trials, per_gen=${(state.payload.highlights?.per_gen || []).length}`);
     } catch (err) {
       $(".summary-shell").prepend(el("div", { class: "error-banner" },
-        `Could not load tb2_haiku.json: ${err.message}. Rebuild with scripts/build_tb2_dashboard.py.`));
+        `Could not load ${DATA_URL}: ${err.message}.`));
       return;
     }
     // Default selected gen: G1 (the cold-start moment is often the most striking)
