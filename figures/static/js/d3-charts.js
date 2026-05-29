@@ -70,7 +70,7 @@
       g.selectAll("rect.kc-bar").data(gens).enter().append("rect").attr("class", "kc-bar")
         .attr("x", (d) => xs(d.gen)).attr("y", (d) => yL(d.delta)).attr("width", xs.bandwidth())
         .attr("height", (d) => ih - yL(d.delta)).attr("rx", 3)
-        .attr("fill", (d) => colorD(d.delta)).attr("stroke", accent).attr("stroke-width", 1)
+        .attr("fill", (d) => (opts.flatBars ? accent : colorD(d.delta))).attr("stroke", accent).attr("stroke-width", 1)
         .attr("opacity", (d) => (sel == null ? 1 : d.gen === sel ? 1 : 0.45))
         .style("cursor", "pointer")
         .on("click", (e, d) => { if (typeof opts.onSelect === "function") opts.onSelect(d.gen); })

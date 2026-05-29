@@ -54,8 +54,8 @@
     if (!s) return "";
     const cleaned = s.trim().replace(/\s+/g, " ");
     if (cleaned.length <= max) return cleaned;
-    const window = cleaned.slice(0, max + 1);
-    let cut = Math.max(window.lastIndexOf(" "), window.lastIndexOf(","), window.lastIndexOf(";"));
+    const seg = cleaned.slice(0, max + 1);
+    let cut = Math.max(seg.lastIndexOf(" "), seg.lastIndexOf(","), seg.lastIndexOf(";"));
     if (cut < 40) cut = max;
     return cleaned.slice(0, cut).replace(/[ ,;]+$/, "") + "…";
   };
@@ -85,7 +85,7 @@
       const last  = grows[grows.length - 1]?.macro_pass_ratio;
       if (first != null && last != null) {
         const arc = $("#summary-arc");
-        if (arc) arc.textContent = `${Math.round(first * 100)}% → ${Math.round(last * 100)}%`;
+        if (arc) arc.textContent = `${(first * 100).toFixed(1)}% → ${(last * 100).toFixed(1)}%`;
       }
     }
   };
@@ -119,6 +119,7 @@
       KCSICharts.timeline(host, gens, {
         total: p.total_tasks || 1, height: 220,
         selectedGen: state.selectedGen,
+        flatBars: true,  // generation-by-generation summary: don't colorize bars by count
         onSelect: (g) => setSelectedGen(g),
       });
     }

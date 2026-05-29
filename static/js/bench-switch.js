@@ -64,8 +64,23 @@
     // If arriving via the #generations anchor, load immediately.
     if (root.id && location.hash === "#" + root.id) initLoad();
 
+    const selectable = benchTabs.filter(function (t) { return !(t.disabled || t.classList.contains("is-disabled")); });
     benchTabs.forEach(function (t) {
       t.addEventListener("click", function () { if (t.disabled || t.classList.contains("is-disabled")) return; bench = t.dataset.bench; loaded = true; apply(); });
+      t.addEventListener("keydown", function (e) {
+        var i = selectable.indexOf(t);
+        if (i < 0) return; // disabled tab: leave default behavior
+        var n = -1;
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") n = (i + 1) % selectable.length;
+        else if (e.key === "ArrowLeft" || e.key === "ArrowUp") n = (i - 1 + selectable.length) % selectable.length;
+        else if (e.key === "Home") n = 0;
+        else if (e.key === "End") n = selectable.length - 1;
+        if (n < 0) return;
+        e.preventDefault();
+        var next = selectable[n];
+        next.focus();
+        bench = next.dataset.bench; loaded = true; apply();
+      });
     });
   });
 })();
