@@ -81,10 +81,10 @@
         .attr("text-anchor", "middle").attr("font-size", 11).attr("fill", ink).text((d) => d.delta);
       // cumulative line + dots + labels
       const lineGen = d3.line().x((d) => xs(d.gen) + xs.bandwidth() / 2).y((d) => yR(d.cumulative));
-      g.append("path").datum(gens).attr("fill", "none").attr("stroke", accent).attr("stroke-width", 2)
+      g.append("path").datum(gens).attr("fill", "none").attr("stroke", ink).attr("stroke-width", 2)
         .attr("stroke-dasharray", "3,3").attr("d", lineGen);
       g.selectAll("circle.kc-cdot").data(gens).enter().append("circle").attr("class", "kc-cdot")
-        .attr("cx", (d) => xs(d.gen) + xs.bandwidth() / 2).attr("cy", (d) => yR(d.cumulative)).attr("r", 4).attr("fill", accent)
+        .attr("cx", (d) => xs(d.gen) + xs.bandwidth() / 2).attr("cy", (d) => yR(d.cumulative)).attr("r", 4).attr("fill", ink)
         .append("title").text((d) => `G${d.gen}\ncumulative: ${d.cumulative}`);
       g.selectAll("text.kc-clbl").data(gens).enter().append("text").attr("class", "kc-clbl")
         .attr("x", (d) => xs(d.gen) + xs.bandwidth() / 2).attr("y", (d) => yR(d.cumulative) - 8)
