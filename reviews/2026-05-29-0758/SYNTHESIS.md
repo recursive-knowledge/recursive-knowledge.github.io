@@ -1,7 +1,7 @@
 # Deep Review: recursive-knowledge.github.io @ main @ 2026-05-29-0758
 
 10-agent parallel review of the project website, cross-checked against the paper at
-`~/Projects/Swarm-COLM-2026/`. **Headline counts: 5 blockers · 15 highs · ~19 mediums · ~20 lows.**
+`~/Projects/Swarm-COLM-2026/`. **Headline counts: 5 blockers · 13 highs · ~19 mediums · ~20 lows.** *(2 data-integrity HIGHs retracted as false on verification — see notes.)*
 
 Two cross-agent findings were verified at the source by the orchestrator (per `grounded-subagents`)
 because they were load-bearing and the agents disagreed — see "Verification notes" at the end.
@@ -11,7 +11,7 @@ because they were load-bearing and the agents disagreed — see "Verification no
 |---|-----------|--------------------|--------|
 | 1 | paper-fidelity-numbers | 1 / 0 / 2 / 1 | [paper-fidelity-numbers.md](paper-fidelity-numbers.md) |
 | 2 | paper-fidelity-claims  | 1 / 2 / 3 / 0 | [paper-fidelity-claims.md](paper-fidelity-claims.md) |
-| 3 | data-integrity         | 0 / 2 / 2 / 2 | [data-integrity.md](data-integrity.md) |
+| 3 | data-integrity         | 0 / 0 / 2 / 2 | [data-integrity.md](data-integrity.md) — 2 HIGHs retracted (false) |
 | 4 | links-nav-routing      | 1 / 2 / 1 / 1 | [links-nav-routing.md](links-nav-routing.md) |
 | 5 | assets-figures         | 0 / 3 / 2 / 3 | [assets-figures.md](assets-figures.md) |
 | 6 | javascript             | 0 / 1 / 3 / 1 | [javascript.md](javascript.md) |
@@ -90,9 +90,8 @@ by D3 at runtime → heatmaps render light tones on the dark page.
 **Hero figure mismatch** *(assets)* site `main_full.png` has different axes/palette/points than the
 paper's `figures/main_full.png`, with no regeneration path (no `main_full.pdf`, omitted from README loop).
 
-**Data: dangling transcripts** *(data)* Many `transcript_path` entries in `arc1_haiku.json` (~18 dirs)
-and `tb2_haiku.json` (many dirs, e.g. `gpt2-codegolf`, `torch-tensor-parallelism`) have no files on
-disk → "Open full transcript" 404s.
+~~**Data: dangling transcripts**~~ — RETRACTED (false). Verified all 705 referenced transcripts
+exist on disk (0 missing); the agent's Glob calls misfired. See data-integrity.md.
 
 **`copyBibtex` latent bug** *(javascript)* targets a non-existent `#bibtex` and is unwired (`index.html:458`).
 
@@ -156,3 +155,6 @@ disk → "Open full transcript" 404s.
   **NEEDS AUTHOR CONFIRMATION**, not a confirmed mislabel.
 - Reviewer agents (`feature-dev:code-reviewer`) had no Write tool, so all 10 reports were persisted by
   the orchestrator from the agents' returned findings.
+- **Dangling-transcripts (data-integrity, 2× HIGH) RETRACTED 2026-05-29:** exhaustive
+  `os.path.exists` over every `transcript_path` in all four data JSONs found 0 missing (705/705
+  present). The agent's `Glob`-based "missing" claims were false — a known subagent failure mode.

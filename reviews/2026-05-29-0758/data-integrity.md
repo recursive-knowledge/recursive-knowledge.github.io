@@ -3,31 +3,22 @@
 **Scope:** JSON data files, builder scripts, and dashboard JS aggregation/rendering.
 
 ## Severity counts
-BLOCKER 0 · HIGH 2 · MEDIUM 2 · LOW 2
+BLOCKER 0 · HIGH 0 · MEDIUM 2 · LOW 2
+*(was HIGH 2 — both "dangling transcript" findings RETRACTED on verification; see below)*
 
 ---
 
-### Dangling transcript references — ARC-AGI-1 (≈18 missing task directories)
-**Severity:** HIGH
-**Location:** `figures/static/data/arc1_haiku.json` (transcript_path fields) vs `figures/static/data/arc1_transcripts/`
-**Evidence:** 165 `transcript_path` entries in JSON; many referenced task dirs absent on disk.
-Confirmed-missing via Glob (no files found): `d22278a0`, `b8825c91`, `f35d900a`, `e509e548`,
-`5ad4f10b`, `b548a754`, `bdad9b1f`, `694f12f3`, `dc0a314f`, `ea32f347`, `caa06a1f`, `b6afb2da`,
-`f76d97a5`, `a740d043`, `e8593010`, `c8f0f002`, `ce22a75a`, `e48d4e1a`. ~43 of ~61 task IDs present.
-Sample: `arc1_haiku.json:9153` → `"transcript_path": "arc1_transcripts/d22278a0/gen1.txt"`.
-**Failure mode:** "Open full transcript" for these tasks → HTTP 404 → "(failed to load transcript: HTTP 404)".
-**Recommendation:** Re-run `build_arc_dashboard.py` so transcript side-files are emitted, or prune
-the dangling references.
-
-### Dangling transcript references — Terminal-Bench 2 (multiple missing task directories)
-**Severity:** HIGH
-**Location:** `figures/static/data/tb2_haiku.json` vs `figures/static/data/transcripts/`
-**Evidence:** Confirmed-missing dirs (Glob): `gpt2-codegolf` (refs at JSON:496-632),
-`torch-tensor-parallelism` (671-824), `sam-cell-seg` (863-1016), `train-fasttext` (1055-1106),
-plus `filter-js-from-html`, `path-tracing`, `polyglot-rust-c`, `polyglot-c-py`,
-`sqlite-db-truncate`, `feal-linear-cryptanalysis`, `dna-assembly`, `regex-chess`, etc.
-**Failure mode:** Same 404 on "Open full transcript".
-**Recommendation:** Same as ARC1.
+### ~~Dangling transcript references — ARC-AGI-1 / Terminal-Bench 2~~ — RETRACTED (false)
+**Original severity:** HIGH ×2 · **Verdict after orchestrator verification: NOT A BUG.**
+The agent reported ~18 ARC-1 + many TB2 transcript dirs as "missing" based on `Glob` returning
+"No files found". Direct verification (2026-05-29) shows every referenced transcript file exists:
+- Exhaustive `os.path.exists` over all `transcript_path` values in `tb2_haiku.json`,
+  `arc1_haiku.json`, `knowledge.json`, `arc1_knowledge.json` → **0 missing** (540/540 TB2,
+  165/165 ARC-1 present). 88/88 TB2 and 50/50 ARC-1 transcript dirs on disk.
+- Spot-checks the agent named as missing all exist, e.g. `transcripts/gpt2-codegolf/gen2.txt`
+  (45694 bytes), `arc1_transcripts/d22278a0/gen1.txt` (3909 bytes).
+This matches the documented failure mode "Explore/subagent 'file missing' claims are frequently
+wrong" — the agent's Glob calls misfired. No action taken; nothing to prune or rebuild.
 
 ---
 
