@@ -1,4 +1,4 @@
-/* TB2 Haiku Dashboard — narrative-focused vanilla JS + Plotly */
+/* TB2 Haiku Dashboard — narrative-focused vanilla JS + D3 (window.KCSICharts) */
 (function () {
   "use strict";
 
@@ -61,29 +61,6 @@
   };
   const statusLabel = (s) =>
     ({ resolved: "Resolved", failed: "Failed", infra: "Infra issue" }[s] || "Unknown");
-
-  // ====================================================================== Plotly theme helpers
-  const plotlyLayout = (extra = {}) => {
-    const ink   = cssVar("--color-text") || "#1a1612";
-    const muted = cssVar("--color-text-secondary") || "#6b6259";
-    const line  = cssVar("--color-border") || "#ebe6dd";
-    const bg    = cssVar("--color-bg") || "#ffffff";
-    return Object.assign({
-      paper_bgcolor: "rgba(0,0,0,0)",
-      plot_bgcolor: bg,
-      font: { family: "Inter, -apple-system, BlinkMacSystemFont, sans-serif", size: 12, color: ink },
-      margin: { l: 50, r: 30, t: 14, b: 40 },
-      xaxis:  { gridcolor: line, zerolinecolor: line, tickfont: { color: muted, size: 11 }, titlefont: { color: muted, size: 12 } },
-      yaxis:  { gridcolor: line, zerolinecolor: line, tickfont: { color: muted, size: 11 }, titlefont: { color: muted, size: 12 } },
-      legend: { font: { color: muted, size: 11 }, bgcolor: "rgba(0,0,0,0)" },
-      hoverlabel: { bgcolor: bg, bordercolor: line, font: { color: ink, family: "Inter, sans-serif", size: 12 } },
-    }, extra);
-  };
-  const plotlyConfig = { responsive: true, displaylogo: false, modeBarButtonsToRemove: ["lasso2d", "select2d"] };
-  const replot = (host, traces, layout) => {
-    if (!host || typeof Plotly === "undefined") return;
-    Plotly.react(host, traces, layout, plotlyConfig);
-  };
 
   // ====================================================================== Timeline
   const renderTimeline = (host) => {
@@ -661,9 +638,6 @@
     } catch (err) {
       showError(`Could not load tb2_haiku.json: ${err.message}. Did you run scripts/build_tb2_dashboard.py yet?`);
       return;
-    }
-    if (typeof Plotly === "undefined") {
-      showError("Plotly didn't load — charts will be skipped. Check network access to cdn.plot.ly.");
     }
     safely("renderMeta",              () => renderMeta());
     safely("renderKpis",              () => renderKpis($("#kpi-strip")));
