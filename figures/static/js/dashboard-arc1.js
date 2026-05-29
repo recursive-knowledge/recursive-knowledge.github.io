@@ -719,7 +719,7 @@
       state.payload = await r.json();
       console.log(`[dashboard] loaded ${state.payload.total_tasks} tasks, ${state.payload.total_traces} trials`);
     } catch (err) {
-      showError(`Could not load tb2_haiku.json: ${err.message}. Did you run scripts/build_tb2_dashboard.py yet?`);
+      showError(`Could not load ${DATA_URL}: ${err.message}. Did you run scripts/build_arc_dashboard.py yet?`);
       return;
     }
     safely("renderMeta",              () => renderMeta());
