@@ -42,8 +42,8 @@
       const iw = Math.max(20, W - m.l - m.r), ih = Math.max(20, H - m.t - m.b);
       const total = opts.total || d3.max(gens, (g) => g.cumulative) || 1;
       const sel = opts.selectedGen;
-      const accent = cssVar("--color-accent", "#0c7a91");
-      const accentLight = cssVar("--color-accent-light", "#e3f1f4");
+      const accent = cssVar("--color-accent", "#DA7800");
+      const accentLight = cssVar("--color-accent-light", "#fbeede");
       const warmHigh = cssVar("--color-warm-high", "#b10026");
       const ink = cssVar("--color-text", "#1a1a1c");
       const muted = cssVar("--color-text-secondary", "#71717a");
