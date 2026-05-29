@@ -22,6 +22,30 @@
     const benchTab = () => benchTabs.find(function (t) { return t.dataset.bench === bench; });
     const load = (src) => { if (src && frame.getAttribute("src") !== src) frame.setAttribute("src", src); };
 
+    // Auto-size the iframe to its content so nothing scrolls inside — show everything.
+    // The embedded summary is same-origin; its D3 charts render async and the
+    // centerpiece changes height on click, so we re-measure via ResizeObserver
+    // plus a few delayed fallbacks.
+    const wrap = frame.parentElement;
+    let ro = null;
+    const measure = () => {
+      let doc;
+      try { doc = frame.contentDocument || (frame.contentWindow && frame.contentWindow.document); } catch (e) { return; }
+      if (!doc || !doc.body) return;
+      const h = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight);
+      if (h > 0) { frame.style.height = h + "px"; if (wrap) wrap.style.height = h + "px"; }
+    };
+    const observeContent = () => {
+      let doc;
+      try { doc = frame.contentDocument || (frame.contentWindow && frame.contentWindow.document); } catch (e) { return; }
+      if (!doc || !doc.body) return;
+      if (ro) ro.disconnect();
+      if (typeof ResizeObserver === "function") { ro = new ResizeObserver(measure); ro.observe(doc.body); }
+      [50, 250, 600, 1200].forEach(function (d) { setTimeout(measure, d); });
+    };
+    frame.addEventListener("load", function () { measure(); observeContent(); });
+    window.addEventListener("resize", measure);
+
     const apply = () => {
       benchTabs.forEach(function (t) { const on = t.dataset.bench === bench; t.classList.toggle("is-active", on); t.setAttribute("aria-selected", on ? "true" : "false"); });
       const bt = benchTab();
