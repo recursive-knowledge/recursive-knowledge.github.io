@@ -585,7 +585,21 @@
         onFiltersChanged();
       });
     }
-    $$(".tab-btn").forEach((b) => b.addEventListener("click", () => setActiveTab(b.dataset.tab)));
+    const tabBtns = $$(".tab-btn");
+    tabBtns.forEach((b, i) => {
+      b.addEventListener("click", () => setActiveTab(b.dataset.tab));
+      b.addEventListener("keydown", (e) => {
+        let n = -1;
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") n = (i + 1) % tabBtns.length;
+        else if (e.key === "ArrowLeft" || e.key === "ArrowUp") n = (i - 1 + tabBtns.length) % tabBtns.length;
+        else if (e.key === "Home") n = 0;
+        else if (e.key === "End") n = tabBtns.length - 1;
+        if (n < 0) return;
+        e.preventDefault();
+        tabBtns[n].focus();
+        setActiveTab(tabBtns[n].dataset.tab);
+      });
+    });
     const slider = $("#gen-slider");
     if (slider) {
       slider.addEventListener("input", () => {

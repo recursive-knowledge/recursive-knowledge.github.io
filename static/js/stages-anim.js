@@ -706,7 +706,19 @@
     subRow = wrap.querySelector(".stages-substeps");
     tabs.forEach((tab, k) => {
       tab.addEventListener("click", () => seekStage(k));
-      tab.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); seekStage(k); } });
+      tab.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); seekStage(k); return; }
+        // WAI-ARIA tabs: arrow/Home/End move focus and activate.
+        let n = -1;
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") n = (k + 1) % tabs.length;
+        else if (e.key === "ArrowLeft" || e.key === "ArrowUp") n = (k - 1 + tabs.length) % tabs.length;
+        else if (e.key === "Home") n = 0;
+        else if (e.key === "End") n = tabs.length - 1;
+        if (n < 0) return;
+        e.preventDefault();
+        tabs[n].focus();
+        seekStage(n);
+      });
     });
     if (playBtn) playBtn.addEventListener("click", () => { if (ctl.playing) { ctl.userPaused = true; pause(); } else play(); });
     if (restartBtn) restartBtn.addEventListener("click", () => { ctl.pinned = null; seek(0); play(); });
