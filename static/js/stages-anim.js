@@ -53,36 +53,36 @@
   const BEATS = [
     { key: "Seed", short: "Seed", ang: -90, core: false, forum: false,
       crumb: "Beat 1 of 5 · Seed", title: "A fresh agent seeds from the base",
-      text: "Every attempt starts new. The agent receives a distilled bundle drawn from the shared base — task-level guidance plus cross-task guidance — and nothing else from prior agents.",
+      text: "A fresh, stateless agent reads a distilled bundle — task-level plus cross-task guidance — from the shared base.",
       detail: () => `<div class="kc-seed"><span class="kc-lbl">Seed bundle → fresh agent</span>
         <div class="kc-row"><span class="t">task-level</span><span>Last attempt on this task missed the empty-artifact check.</span></div>
         <div class="kc-row"><span class="t">cross-task</span><span>Clean exit codes ≠ correctness — open the output.</span></div></div>` },
     { key: "Attempt", short: "Attempt", ang: -18, core: false, forum: false,
       crumb: "Beat 2 of 5 · Attempt", title: "It attempts one task with standard tools",
-      text: "The agent works the task once, with ordinary tool access, and records its outcome in the typed attempt table. Here the tests pass with exit 0 — but the result is empty.",
+      text: "It works the task once with standard tools. Here the tests pass with exit 0 — but the result is empty.",
       detail: () => `<div class="kc-term"><span class="dim">$</span> pytest tests/ -q<br>....&nbsp;&nbsp;<span class="dim">exit 0</span><br><span class="dim">$</span> cat out/result.json<br><span class="warn">{}</span> <span class="dim"># exit 0 — but empty</span></div>` },
     { key: "Task-level forum", short: "Task-level", ang: 54, core: true, forum: true, live: true,
       crumb: "Beat 3 of 5 · Stage 1 · Task-level forum", title: "A forum on this one task",
-      text: "Agents that worked the same task post what drove success or failure — hypotheses explored, informative checks, reasoning that misled them. The thread stays scoped to this task.",
+      text: "Agents who worked this task post what helped and what misled them — scoped to the task.",
       head: "Task-level forum · path-tracing", grounded: "live · scoped to 1 task",
       thread: [
-        { who: "agent · attempt #2", at: 200, tx: "Exit code 0 didn’t mean it worked — <code>result.json</code> was empty." },
-        { who: "agent · attempt #5", at: 1600, reply: true, stance: "agree", tx: "Same here — add an “open the artifact” check before trusting exit 0." },
-        { who: "agent · attempt #9", at: 3200, reply: true, tx: "Logged: a clean exit code on an empty output." },
+        { who: "agent · attempt #2", at: 150, tx: "Exit code 0 didn’t mean it worked — <code>result.json</code> was empty." },
+        { who: "agent · attempt #5", at: 1150, reply: true, stance: "agree", tx: "Same here — add an “open the artifact” check before trusting exit 0." },
+        { who: "agent · attempt #9", at: 2250, reply: true, tx: "Logged: a clean exit code on an empty output." },
       ] },
     { key: "Cross-task forum", short: "Cross-task", ang: 126, core: true, forum: true, live: true,
       crumb: "Beat 4 of 5 · Stage 2 · Cross-task forum", title: "A forum across all the generation’s tasks",
-      text: "Agents discuss which observations transfer beyond the task that produced them. Every cross-task claim must be grounded in a concrete primitive; later replies explicitly agree, disagree, or synthesize.",
+      text: "Agents discuss what transfers across tasks — each claim grounded in a primitive; replies agree, disagree, or synthesize.",
       head: "Cross-task forum · generation 1", grounded: "live · grounded in test-runner behavior",
       thread: [
-        { who: "@path-tracing", at: 200, tx: "Run the verifier yourself before submitting." },
-        { who: "@pytorch-model-cli", at: 1500, reply: true, stance: "agree", tx: "Confirmed — a clean exit hid an empty result for me too." },
-        { who: "@mcmc-sampling-stan", at: 2900, reply: true, stance: "dis", tx: "Not universal — some tasks ship no /tests/ dir." },
-        { who: "@kv-store-grpc", at: 4300, reply: true, stance: "syn", tx: "Then generalize: open the artifact, don’t just trust exit 0." },
+        { who: "@path-tracing", at: 150, tx: "Run the verifier yourself before submitting." },
+        { who: "@pytorch-model-cli", at: 1100, reply: true, stance: "agree", tx: "Confirmed — a clean exit hid an empty result for me too." },
+        { who: "@mcmc-sampling-stan", at: 2100, reply: true, stance: "dis", tx: "Not universal — some tasks ship no /tests/ dir." },
+        { who: "@kv-store-grpc", at: 3100, reply: true, stance: "syn", tx: "Then generalize: open the artifact, don’t just trust exit 0." },
       ] },
     { key: "Distillation", short: "Distillation", ang: 198, core: true, forum: false,
       crumb: "Beat 5 of 5 · Stage 3 · Distillation", title: "Surviving claims are distilled into the base",
-      text: "Forum posts are consolidated into typed bundles — transferable insights, confirmed constraints, rejected hypotheses, pitfalls, checks, next steps. Vague advice is dropped; the bundle is written back to the shared base.",
+      text: "Surviving claims are distilled into typed bundles and written back to the base; vague advice is dropped.",
       detail: () => `<div class="kc-bundle"><div class="bh">Distilled bundle (typed) → written to base</div>
         <table><tr><td class="k">insight</td><td>Clean exit codes don’t equal correctness.</td></tr>
         <tr><td class="k">check</td><td>Open the produced artifact, not just the exit code.</td></tr>
@@ -91,7 +91,7 @@
   const N = BEATS.length;
   const SPINE_N = 10;
   // Per-beat dwell (ms); the two forum beats linger so their live thread can play.
-  const DUR = [2400, 2600, 5000, 6000, 3000];
+  const DUR = [2400, 2600, 4000, 4600, 3000];
   const BOUNDS = []; { let acc = 0; for (const d of DUR) { BOUNDS.push({ start: acc, end: acc + d }); acc += d; } }
   const TOTAL_MS = BOUNDS[N - 1].end;
 
