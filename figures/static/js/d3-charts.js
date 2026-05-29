@@ -46,6 +46,7 @@
       const accentLight = cssVar("--color-accent-light", "#fbeede");
       const warmHigh = cssVar("--color-warm-high", "#b10026");
       const ink = cssVar("--color-text", "#1a1a1c");
+      const cool = cssVar("--color-cool", "#0e7490");
       const muted = cssVar("--color-text-secondary", "#71717a");
       const lineC = cssVar("--color-border", "#e4e1db");
 
@@ -81,14 +82,14 @@
         .attr("text-anchor", "middle").attr("font-size", 11).attr("fill", ink).text((d) => d.delta);
       // cumulative line + dots + labels
       const lineGen = d3.line().x((d) => xs(d.gen) + xs.bandwidth() / 2).y((d) => yR(d.cumulative));
-      g.append("path").datum(gens).attr("fill", "none").attr("stroke", ink).attr("stroke-width", 2)
+      g.append("path").datum(gens).attr("fill", "none").attr("stroke", cool).attr("stroke-width", 2)
         .attr("stroke-dasharray", "3,3").attr("d", lineGen);
       g.selectAll("circle.kc-cdot").data(gens).enter().append("circle").attr("class", "kc-cdot")
-        .attr("cx", (d) => xs(d.gen) + xs.bandwidth() / 2).attr("cy", (d) => yR(d.cumulative)).attr("r", 4).attr("fill", ink)
+        .attr("cx", (d) => xs(d.gen) + xs.bandwidth() / 2).attr("cy", (d) => yR(d.cumulative)).attr("r", 4).attr("fill", cool)
         .append("title").text((d) => `G${d.gen}\ncumulative: ${d.cumulative}`);
       g.selectAll("text.kc-clbl").data(gens).enter().append("text").attr("class", "kc-clbl")
         .attr("x", (d) => xs(d.gen) + xs.bandwidth() / 2).attr("y", (d) => yR(d.cumulative) - 8)
-        .attr("text-anchor", "middle").attr("font-size", 10).attr("fill", muted).text((d) => d.cumulative);
+        .attr("text-anchor", "middle").attr("font-size", 10).attr("fill", cool).text((d) => d.cumulative);
       // x axis
       g.append("g").attr("transform", `translate(0,${ih})`).call(d3.axisBottom(xs).tickFormat((d) => `G${d}`)).call((s) => {
         s.selectAll(".domain,line").attr("stroke", lineC);
@@ -101,7 +102,7 @@
       });
       // axis titles
       svg.append("text").attr("x", m.l).attr("y", 13).attr("font-size", 10).attr("fill", muted).text("New solves (Δ) · click a bar");
-      svg.append("text").attr("x", W - m.r).attr("y", 13).attr("text-anchor", "end").attr("font-size", 10).attr("fill", muted).text(`Cumulative / ${total}`);
+      svg.append("text").attr("x", W - m.r).attr("y", 13).attr("text-anchor", "end").attr("font-size", 10).attr("fill", cool).text(`Cumulative / ${total}`);
     };
     register(host, draw);
   };
