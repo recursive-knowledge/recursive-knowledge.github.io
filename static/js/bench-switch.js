@@ -14,7 +14,7 @@
     const benchTabs = Array.prototype.slice.call(root.querySelectorAll(".bench-tab"));
     const frame = root.querySelector(".fig-iframe");
     const fullLink = root.querySelector(".bench-full-link");
-    if (!benchTabs.length || !frame) return;
+    if (!frame) return;   // benchmark tabs are optional — switching also happens inside the panel
 
     const activeOr = (tabs, fallback) => { const a = tabs.find(function (t) { return t.classList.contains("is-active"); }); return a || fallback; };
     let bench = (root.dataset.defaultBench) || (activeOr(benchTabs, benchTabs[0]) || {}).dataset.bench;
