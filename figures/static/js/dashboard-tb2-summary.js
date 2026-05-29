@@ -21,6 +21,12 @@
     selectedGen: null,
   };
 
+  // Some datasets (e.g. ARC) auto-derive the per-gen insights rather than
+  // hand-curating them; surface that distinction in the labels.
+  const isAutoDerived = () => !!((state.payload || {}).highlights || {}).auto_derived;
+  const insightLabel  = () => (isAutoDerived() ? "Auto-picked insight" : "Curated insight");
+  const roundsLabel   = () => (isAutoDerived() ? "generations" : "curation rounds");
+
   // ====================================================================== DOM
   const $  = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -70,7 +76,7 @@
       clear(strip);
       strip.appendChild(el("span", { class: "summary-headline-main" }, fmtPct(k.solved_pct)));
       strip.appendChild(el("span", { class: "summary-headline-sub" },
-        `${k.solved} / ${p.total_tasks} solved · ${gens} curation rounds`));
+        `${k.solved} / ${p.total_tasks} solved · ${gens} ${roundsLabel()}`));
     }
     // Subtitle arc updated from real data
     const grows = p.generations || [];
@@ -147,7 +153,7 @@
         el("span", { class: "evo-gen" }, `G${gen}`),
         el("span", { class: "evo-delta" }, dCount > 0 ? `+${dCount} solved` : "—"),
       ));
-      card.appendChild(el("div", { class: "evo-section" }, "Curated insight"));
+      card.appendChild(el("div", { class: "evo-section" }, insightLabel()));
       card.appendChild(el("div", { class: "evo-headline" + (ins ? "" : " empty") }, headline));
       host.appendChild(card);
     }
@@ -187,7 +193,7 @@
     if (ins) {
       const insBlock = el("article", { class: "centerpiece-insight" });
       insBlock.appendChild(el("div", { class: "centerpiece-insight-head" },
-        el("span", { class: "centerpiece-tag" }, "Curated insight"),
+        el("span", { class: "centerpiece-tag" }, insightLabel()),
         el("span", { class: "centerpiece-meta" }, `${ins.confidence || "?"} confidence · ${ins.evidence_count} evidence`),
       ));
       insBlock.appendChild(el("blockquote", { class: "centerpiece-insight-text" },
@@ -260,7 +266,7 @@
       console.log(`[summary] loaded ${state.payload.total_tasks} tasks, ${state.payload.total_traces} trials, per_gen=${(state.payload.highlights?.per_gen || []).length}`);
     } catch (err) {
       $(".summary-shell").prepend(el("div", { class: "error-banner" },
-        `Could not load tb2_haiku.json: ${err.message}. Rebuild with scripts/build_tb2_dashboard.py.`));
+        `Could not load ${DATA_URL}: ${err.message}.`));
       return;
     }
     // Default selected gen: G1 (the cold-start moment is often the most striking)

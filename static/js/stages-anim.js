@@ -117,12 +117,12 @@
   // Results finale (ported from the walkthrough's Act 3).
   const TB2_BASELINES = [
     { label: "OpenHands",      value: 13.9 },
-    { label: "Terminus",       value: 28.3 },
+    { label: "Terminus 2",     value: 28.3 },
     { label: "Mini-SWE-Agent", value: 29.8 },
     { label: "KCSI (ours)",    value: 47.2, accent: true },
   ];
   const EFFICIENCY_CHIPS = [
-    { bench: "SWE-bench Pro", value: "84%", cost: "$76 / task", compare: "vs HyperAgents 42% at $276 — ~6× cheaper" },
+    { bench: "SWE-bench Pro", value: "84%", cost: "$76 / task", compare: "vs HyperAgents 42% at $276 — ~3.6× cheaper" },
     { bench: "ARC-AGI-1",     value: "82%", cost: "$46 / task" },
     { bench: "Polyglot",      value: "80%", cost: "$92 / task" },
   ];
@@ -143,8 +143,8 @@
   const SUBSTEPS = [
     [ { label: "Assign task", at: 0 }, { label: "Terminal phase", at: 2600 }, { label: "Post evidence", at: 5000 } ],
     [ { label: "Evidence converges", at: 0 }, { label: "Agents contribute", at: 2200 }, { label: "Ground a rule", at: 5000 } ],
-    [ { label: "Distill insight", at: 0 }, { label: "Write to bank", at: 1500 }, { label: "Solve more tasks", at: 3650 }, { label: "Bank fills", at: 11600 } ],
-    [ { label: "Bank reused", at: 0 }, { label: "Solve rate", at: 2600 }, { label: "Cross-benchmark", at: 4700 } ],
+    [ { label: "Distill insight", at: 0 }, { label: "Write to base", at: 1500 }, { label: "Solve more tasks", at: 3650 }, { label: "Base fills", at: 11600 } ],
+    [ { label: "Base reused", at: 0 }, { label: "Solve rate", at: 2600 }, { label: "Cross-benchmark", at: 4700 } ],
   ];
   const subAt = (t) => {
     const st = stageAt(t), local = t - BOUNDS[st].start, arr = SUBSTEPS[st];
@@ -246,7 +246,7 @@
   const buildBank = (svg) => {
     const g = svgEl("g", { class: "bank-shelf" });
     g.appendChild(svgEl("rect", { x: BANK.x, y: BANK.y, width: BANK.w, height: BANK.h, rx: 10, class: "bank-shelf-bg" }));
-    S.bankCountLabel = svgEl("text", { x: BANK.x + 4, y: BANK.y - 8, class: "anim-zone-label" }, "KNOWLEDGE BANK · 0 INSIGHTS");
+    S.bankCountLabel = svgEl("text", { x: BANK.x + 4, y: BANK.y - 8, class: "anim-zone-label" }, "KNOWLEDGE BASE · 0 INSIGHTS");
     g.appendChild(S.bankCountLabel);
     for (let k = 0; k < BANK_CARDS.length; k++) {
       const s = bankSlot(k), c = BANK_CARDS[k];
@@ -581,7 +581,7 @@
       setClass(S.bankCards[k], "fresh", on && t < bankRevealT[k] + 600);
       if (on) lit++;
     }
-    S.bankCountLabel.textContent = `KNOWLEDGE BANK · ${lit} INSIGHT${lit === 1 ? "" : "S"}`;
+    S.bankCountLabel.textContent = `KNOWLEDGE BASE · ${lit} INSIGHT${lit === 1 ? "" : "S"}`;
 
     // ---- bank surfaces (end of S3) and stays risen through S4 ----
     let surf = 0;
@@ -629,15 +629,15 @@
       else cap = "A candidate rule is grounded in evidence shared across tasks.";
     } else if (inS3) {
       if (lt3 < S3.DROP[0]) cap = "The discussion is distilled into one transferable insight.";
-      else if (lt3 < S3.ROUNDS_START) cap = "…and written to the knowledge bank below.";
-      else if (lt3 < S3.SURFACE[0]) cap = "Banked knowledge is pulled back up — task after task starts solving.";
-      else cap = "Generation after generation, the bank grows and more tasks fall — 42 / 89 (47.2%).";
+      else if (lt3 < S3.ROUNDS_START) cap = "…and written to the knowledge base below.";
+      else if (lt3 < S3.SURFACE[0]) cap = "Knowledge from the base is pulled back up — task after task starts solving.";
+      else cap = "Generation after generation, the base grows and more tasks fall — 42 / 89 (47.2%).";
     } else {
-      if (lt4 < S4.BARS[0]) cap = "The bank is left behind — and reused on held-out tasks it never trained on.";
+      if (lt4 < S4.BARS[0]) cap = "The base is left behind — and reused on held-out tasks it never trained on.";
       else if (lt4 < S4.CHIPS[0]) cap = "Same stateless agent, same scaffold — 47.2% on Terminal-Bench 2.";
       else cap = "And the curated knowledge transfers across four benchmarks.";
     }
-    if (S.captionEl) S.captionEl.textContent = cap;
+    if (S.captionEl && S.captionEl.textContent !== cap) S.captionEl.textContent = cap;
   };
 
   // ====================================================================== Controls
@@ -648,13 +648,13 @@
     tabs.forEach((tab, k) => {
       if (!BOUNDS[k]) return;
       const on = k === ctl.currentStage;
-      tab.classList.toggle("is-active", on); tab.setAttribute("aria-selected", on ? "true" : "false");
+      tab.classList.toggle("is-active", on); tab.setAttribute("aria-pressed", on ? "true" : "false");
       const b = BOUNDS[k], p = ctl.elapsed <= b.start ? 0 : ctl.elapsed >= b.end ? 1 : (ctl.elapsed - b.start) / (b.end - b.start);
       const fill = tab.querySelector(".stage-progress > i"); if (fill) fill.style.width = (p * 100).toFixed(1) + "%";
     });
     if (scrub) scrub.value = String(Math.round(ctl.elapsed));
     if (playBtn) { playBtn.textContent = ctl.playing ? "⏸" : "▶"; playBtn.setAttribute("aria-label", ctl.playing ? "Pause" : "Play"); }
-    speedBtns.forEach((b) => b.classList.toggle("is-active", Number(b.dataset.speed) === ctl.speed));
+    speedBtns.forEach((b) => { const on = Number(b.dataset.speed) === ctl.speed; b.classList.toggle("is-active", on); b.setAttribute("aria-pressed", on ? "true" : "false"); });
     renderSubsteps();
   };
   const renderSubsteps = () => {
@@ -665,7 +665,7 @@
       while (subRow.firstChild) subRow.removeChild(subRow.firstChild);
       SUBSTEPS[stage].forEach((s) => {
         const chip = document.createElement("button");
-        chip.className = "substep-chip"; chip.type = "button"; chip.setAttribute("role", "tab");
+        chip.className = "substep-chip"; chip.type = "button";
         const dot = document.createElement("span"); dot.className = "substep-dot";
         chip.appendChild(dot); chip.appendChild(document.createTextNode(s.label));
         chip.addEventListener("click", () => { ctl.pinned = stage; ctl.userPaused = false; seek(BOUNDS[stage].start + s.at); play(); });
@@ -673,7 +673,7 @@
       });
     }
     const chips = subRow.children;
-    for (let i = 0; i < chips.length; i++) chips[i].classList.toggle("is-active", i === idx);
+    for (let i = 0; i < chips.length; i++) { const on = i === idx; chips[i].classList.toggle("is-active", on); chips[i].setAttribute("aria-current", on ? "true" : "false"); }
   };
   const tick = (now) => {
     if (!ctl.playing || !ctl.inView) { ctl.rafId = null; return; }
@@ -694,7 +694,8 @@
   const pause = () => { ctl.playing = false; if (ctl.rafId) { cancelAnimationFrame(ctl.rafId); ctl.rafId = null; } S.host.classList.add("is-paused"); syncControls(); };
   const seek = (ms) => { ctl.elapsed = clamp(ms, 0, TOTAL_MS); render(ctl.elapsed); syncControls(); };
   const seekStage = (i) => { ctl.pinned = i; seek(BOUNDS[i].start); if (ctl.reducedMotion) return; play(); };
-  const setSpeed = (s) => { ctl.speed = s; syncControls(); };
+  const setSpeed = (s) => { ctl.speed = s; syncControls();
+    if (ctl.playing && !ctl.rafId && ctl.inView && !ctl.reducedMotion) { ctl.last = 0; ctl.rafId = requestAnimationFrame(tick); } };
   const fastForward = (t) => { pause(); seek(t); };
   const wireControls = (wrap) => {
     tabs = Array.prototype.slice.call(wrap.querySelectorAll(".stage-tab"));
