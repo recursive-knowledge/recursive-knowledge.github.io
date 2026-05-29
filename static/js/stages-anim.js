@@ -1,12 +1,12 @@
 /* Knowledge curation protocol — the loop. (replaces the old 4-stage flywheel)
  *
- * Five beats around a ring, clockwise from the top:
- *   1 Seed              a generic, stateless agent receives a distilled bundle from the base
- *   2 Attempt           it attempts one task with standard tools; the outcome is recorded
- *   3 Task-level forum  (Stage 1) agents post task-scoped evidence            ── core
- *   4 Cross-task forum  (Stage 2) agents DISCUSS what transfers, grounded,    ── core
+ * Five steps around a ring, clockwise from the top:
+ *     Seed              a generic, stateless agent receives a distilled bundle from the base
+ *     Attempt           it attempts one task with standard tools; the outcome is recorded
+ *   1 Task-level forum  (Stage 1) agents post task-scoped evidence
+ *   2 Cross-task forum  (Stage 2) agents DISCUSS what transfers, grounded,
  *                                 with agree / disagree / synthesize replies
- *   5 Distillation      (Stage 3) surviving claims → typed bundles → the base ── core
+ *   3 Distillation      (Stage 3) surviving claims → typed bundles → the base
  * The arrow from Distillation back to Seed is "the next generation seeds from the improved base".
  *
  * The shared knowledge base lives at the CENTER and visibly improves: insight "spines" fill,
@@ -16,7 +16,7 @@
  *   89 tasks · cumulative solved per generation = 19,24,29,33,37,37,40,41,42,42 · final 47.2%.
  *
  * Production: honors prefers-reduced-motion, pauses offscreen (IntersectionObserver),
- * play/pause/restart + 0.5/1/2x speed, keyboard-activatable beat tabs, ARIA live caption.
+ * play/pause/restart + 0.5/1/2x speed, keyboard-activatable step tabs, ARIA live caption.
  */
 (function () {
   "use strict";
@@ -49,20 +49,20 @@
   const sunHTML = () => `<svg viewBox="-16 -16 32 32" aria-hidden="true">` +
     Array.from({ length: 12 }, (_, i) => { const a = i * 30 * Math.PI / 180, h = 7 * Math.PI / 180; const p = (r, x) => `${(r * Math.cos(x)).toFixed(1)},${(r * Math.sin(x)).toFixed(1)}`; return `<path d="M${p(2.6, a - h)} L${p(13, a - h)} L${p(13, a + h)} L${p(2.6, a + h)} Z" fill="var(--color-accent)"/>`; }).join("") + `</svg>`;
 
-  // ---- Beats ----------------------------------------------------------------
+  // ---- Steps ----------------------------------------------------------------
   const BEATS = [
-    { key: "Seed", short: "Seed", ang: -90, core: false, forum: false,
-      crumb: "Beat 1 of 5 · Seed", title: "A fresh agent seeds from the base",
+    { key: "Seed", short: "Seed", ang: -90, forum: false,
+      crumb: "Seed", title: "A fresh agent seeds from the base",
       text: "A fresh, stateless agent reads a distilled bundle — task-level plus cross-task guidance — from the shared base.",
       detail: () => `<div class="kc-seed"><span class="kc-lbl">Seed bundle → fresh agent</span>
         <div class="kc-row"><span class="t">task-level</span><span>Last attempt on this task missed the empty-artifact check.</span></div>
         <div class="kc-row"><span class="t">cross-task</span><span>Clean exit codes ≠ correctness — open the output.</span></div></div>` },
-    { key: "Attempt", short: "Attempt", ang: -18, core: false, forum: false,
-      crumb: "Beat 2 of 5 · Attempt", title: "It attempts one task with standard tools",
+    { key: "Attempt", short: "Attempt", ang: -18, forum: false,
+      crumb: "Attempt", title: "It attempts one task with standard tools",
       text: "It works the task once with standard tools. Here the tests pass with exit 0 — but the result is empty.",
       detail: () => `<div class="kc-term"><span class="dim">$</span> pytest tests/ -q<br>....&nbsp;&nbsp;<span class="dim">exit 0</span><br><span class="dim">$</span> cat out/result.json<br><span class="warn">{}</span> <span class="dim"># exit 0 — but empty</span></div>` },
-    { key: "Task-level forum", short: "Task-level", ang: 54, core: true, forum: true, live: true,
-      crumb: "Beat 3 of 5 · Stage 1 · Task-level forum", title: "A forum on this one task",
+    { key: "Task-level forum", short: "Task-level", ang: 54, forum: true, live: true,
+      crumb: "Stage 1 · Task-level forum", title: "A forum on this one task",
       text: "Agents who worked this task post what helped and what misled them — scoped to the task.",
       head: "Task-level forum · path-tracing", grounded: "live · scoped to 1 task",
       thread: [
@@ -70,8 +70,8 @@
         { who: "agent · attempt #5", at: 1150, reply: true, stance: "agree", tx: "Same here — add an “open the artifact” check before trusting exit 0." },
         { who: "agent · attempt #9", at: 2250, reply: true, tx: "Logged: a clean exit code on an empty output." },
       ] },
-    { key: "Cross-task forum", short: "Cross-task", ang: 126, core: true, forum: true, live: true,
-      crumb: "Beat 4 of 5 · Stage 2 · Cross-task forum", title: "A forum across all the generation’s tasks",
+    { key: "Cross-task forum", short: "Cross-task", ang: 126, forum: true, live: true,
+      crumb: "Stage 2 · Cross-task forum", title: "A forum across all the generation’s tasks",
       text: "Agents discuss what transfers across tasks — each claim grounded in a primitive; replies agree, disagree, or synthesize.",
       head: "Cross-task forum · generation 1", grounded: "live · grounded in test-runner behavior",
       thread: [
@@ -80,8 +80,8 @@
         { who: "@mcmc-sampling-stan", at: 2100, reply: true, stance: "dis", tx: "Not universal — some tasks ship no /tests/ dir." },
         { who: "@kv-store-grpc", at: 3100, reply: true, stance: "syn", tx: "Then generalize: open the artifact, don’t just trust exit 0." },
       ] },
-    { key: "Distillation", short: "Distillation", ang: 198, core: true, forum: false,
-      crumb: "Beat 5 of 5 · Stage 3 · Distillation", title: "Surviving claims are distilled into the base",
+    { key: "Distillation", short: "Distillation", ang: 198, forum: false,
+      crumb: "Stage 3 · Distillation", title: "Surviving claims are distilled into the base",
       text: "Surviving claims are distilled into typed bundles and written back to the base; vague advice is dropped.",
       detail: () => `<div class="kc-bundle"><div class="bh">Distilled bundle (typed) → written to base</div>
         <table><tr><td class="k">insight</td><td>Clean exit codes don’t equal correctness.</td></tr>
@@ -90,7 +90,7 @@
   ];
   const N = BEATS.length;
   const SPINE_N = 10;
-  // Per-beat dwell (ms); the two forum beats linger so their live thread can play.
+  // Per-step dwell (ms); the two forum steps linger so their live thread can play.
   const DUR = [2400, 2600, 4000, 4600, 3000];
   const BOUNDS = []; { let acc = 0; for (const d of DUR) { BOUNDS.push({ start: acc, end: acc + d }); acc += d; } }
   const TOTAL_MS = BOUNDS[N - 1].end;
@@ -182,7 +182,7 @@
       S.deltaEl.animate([{ opacity: 1, transform: "translateY(0)" }, { opacity: 0, transform: "translateY(-12px)" }], { duration: 1100, easing: "ease-out" });
     } else { S.deltaEl.setAttribute("opacity", "0"); }
   }
-  // Live forum thread (the two forum beats): posts arrive over the beat's dwell.
+  // Live forum thread (the two forum steps): posts arrive over the step's dwell.
   let liveThread = null;
   function buildThread(b) {
     const lbl = (s) => s === "syn" ? "synthesize" : s === "dis" ? "push back" : "agree";
@@ -200,7 +200,7 @@
     tabs.forEach((t, i) => { const on = i === idx; t.classList.toggle("is-active", on); t.setAttribute("aria-pressed", on ? "true" : "false"); });
     const b = BEATS[idx];
     const body = b.live ? buildThread(b) : b.detail();
-    S.detail.innerHTML = `<div class="kc-fade"><div class="kc-crumb">${b.crumb}${b.core ? '<span class="core">core</span>' : ''}</div>
+    S.detail.innerHTML = `<div class="kc-fade"><div class="kc-crumb">${b.crumb}</div>
       <h3 class="kc-dtitle">${b.title}</h3><p class="kc-dtext">${b.text}</p>${body}</div>`;
     liveThread = b.live ? { posts: Array.prototype.slice.call(S.detail.querySelectorAll(".pst")), thread: b.thread, typing: S.detail.querySelector(".kc-typing") } : null;
     if (liveThread && ctl.reducedMotion) updateThread(1e9);   // static: reveal the whole thread
