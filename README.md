@@ -11,7 +11,6 @@ HTML/CSS/JS, no build step. Deployed via GitHub Pages.
   stage-anim/index.html          # standalone 3-stage curation animation (embed source)
   figures/
     index.html                   # figures hub (fuller paper page)
-    figure/index.html            # scroll-driven interactive figure (Plotly)
     dashboard/
       index.html                 # dashboard hub
       tb2-haiku/        arc1-haiku/          # full per-task dashboards
@@ -54,7 +53,7 @@ for f in main_full stylized_arc2_example stylized_tb2_example; do
 done
 ```
 
-The figures hub (`figures/index.html`, `figures/figure/index.html`) uses the
+The figures hub (`figures/index.html`) uses the
 full appendix exemplars under `figures/static/images/` (`arc2_example.png`,
 `tb2_example.png`, `framework.png`, `main.png`) rather than the stylized
 versions. PNG/JPG figures can be copied directly from the paper's `figures/`.
