@@ -62,8 +62,11 @@
   const classifyStatus = (task) => {
     if (task.resolved) return "resolved";
     const v = task.verifier_exit_code, a = task.agent_exit_code;
+    const hasExitCodes = ("verifier_exit_code" in task) || ("agent_exit_code" in task);
     const s = (task.trial_status || task.status || "").toLowerCase();
-    if (s.includes("error") || s.includes("infra") || s.includes("verifier_did_not_produce") || v == null || a == null) return "infra";
+    // Only treat a missing exit code as "infra" when the dataset carries exit
+    // codes at all — ARC traces don't, so a null there is not an infra signal.
+    if (s.includes("error") || s.includes("infra") || s.includes("verifier_did_not_produce") || (hasExitCodes && (v == null || a == null))) return "infra";
     return "failed";
   };
   const statusLabel = (s) =>
@@ -716,7 +719,7 @@
       state.payload = await r.json();
       console.log(`[dashboard] loaded ${state.payload.total_tasks} tasks, ${state.payload.total_traces} trials`);
     } catch (err) {
-      showError(`Could not load tb2_haiku.json: ${err.message}. Did you run scripts/build_tb2_dashboard.py yet?`);
+      showError(`Could not load ${DATA_URL}: ${err.message}. Did you run scripts/build_arc_dashboard.py yet?`);
       return;
     }
     safely("renderMeta",              () => renderMeta());
