@@ -76,3 +76,14 @@ The arrow from Distillation back to Seed = "next generation seeds from the impro
 
 Rebuilding the `#results` section; touching other figures; dark-mode fine-tuning beyond
 inheriting tokens.
+
+## Addendum (2026-05-29): live forum discussion
+
+The two forum beats now host a **live discussion** in the detail panel instead of a static
+thread: posts arrive over the beat's dwell with varied, overlapping timing; peers reply with
+**agree / push back / synthesize**; a "live" badge and a typing indicator show activity; the
+active forum node gently pulses. The bustle stays **contained to the panel** — the ring and
+center base never get busier (this is how we keep the original's energy without its clutter).
+To give the discussion room, beats now have **per-beat durations** (`DUR=[2400,2600,5000,6000,3000]`
+ms) — the two forum beats linger. The separate "Transfer" companion (banked insights solving
+tasks) was prototyped (`mockups/inaction.html`) and **shelved** for now per review.

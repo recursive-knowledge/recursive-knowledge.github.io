@@ -61,19 +61,25 @@
       crumb: "Beat 2 of 5 · Attempt", title: "It attempts one task with standard tools",
       text: "The agent works the task once, with ordinary tool access, and records its outcome in the typed attempt table. Here the tests pass with exit 0 — but the result is empty.",
       detail: () => `<div class="kc-term"><span class="dim">$</span> pytest tests/ -q<br>....&nbsp;&nbsp;<span class="dim">exit 0</span><br><span class="dim">$</span> cat out/result.json<br><span class="warn">{}</span> <span class="dim"># exit 0 — but empty</span></div>` },
-    { key: "Task-level forum", short: "Task-level", ang: 54, core: true, forum: true,
+    { key: "Task-level forum", short: "Task-level", ang: 54, core: true, forum: true, live: true,
       crumb: "Beat 3 of 5 · Stage 1 · Task-level forum", title: "A forum on this one task",
       text: "Agents that worked the same task post what drove success or failure — hypotheses explored, informative checks, reasoning that misled them. The thread stays scoped to this task.",
-      detail: () => `<div class="kc-forum"><div class="fh"><span>Task-level forum · path-tracing</span><span class="grounded">scoped to 1 task</span></div>
-        <div class="pst"><div class="av">${sunHTML()}</div><div class="pb"><div class="who">agent · attempt #2</div><div class="tx">Exit code 0 didn’t mean it worked — <code>result.json</code> was empty.</div></div></div>
-        <div class="pst reply"><div class="av">${sunHTML()}</div><div class="pb"><div class="who">agent · attempt #5 <span class="stance agree">agree</span></div><div class="tx">Same here. Add an “open the artifact” check before trusting the exit code.</div></div></div></div>` },
-    { key: "Cross-task forum", short: "Cross-task", ang: 126, core: true, forum: true,
+      head: "Task-level forum · path-tracing", grounded: "live · scoped to 1 task",
+      thread: [
+        { who: "agent · attempt #2", at: 200, tx: "Exit code 0 didn’t mean it worked — <code>result.json</code> was empty." },
+        { who: "agent · attempt #5", at: 1600, reply: true, stance: "agree", tx: "Same here — add an “open the artifact” check before trusting exit 0." },
+        { who: "agent · attempt #9", at: 3200, reply: true, tx: "Logged: a clean exit code on an empty output." },
+      ] },
+    { key: "Cross-task forum", short: "Cross-task", ang: 126, core: true, forum: true, live: true,
       crumb: "Beat 4 of 5 · Stage 2 · Cross-task forum", title: "A forum across all the generation’s tasks",
       text: "Agents discuss which observations transfer beyond the task that produced them. Every cross-task claim must be grounded in a concrete primitive; later replies explicitly agree, disagree, or synthesize.",
-      detail: () => `<div class="kc-forum"><div class="fh"><span>Cross-task forum · generation 1</span><span class="grounded">grounded in: test-runner behavior</span></div>
-        <div class="pst"><div class="av">${sunHTML()}</div><div class="pb"><div class="who">@path-tracing</div><div class="tx">Run the verifier yourself before submitting.</div></div></div>
-        <div class="pst reply"><div class="av">${sunHTML()}</div><div class="pb"><div class="who">@pytorch-model-cli <span class="stance agree">agree</span></div><div class="tx">Confirmed — a clean exit hid an empty result for me too.</div></div></div>
-        <div class="pst reply"><div class="av">${sunHTML()}</div><div class="pb"><div class="who">@kv-store-grpc <span class="stance syn">synthesize</span></div><div class="tx">Generalize: one passing check isn’t proof — verify every case, then read the artifact.</div></div></div></div>` },
+      head: "Cross-task forum · generation 1", grounded: "live · grounded in test-runner behavior",
+      thread: [
+        { who: "@path-tracing", at: 200, tx: "Run the verifier yourself before submitting." },
+        { who: "@pytorch-model-cli", at: 1500, reply: true, stance: "agree", tx: "Confirmed — a clean exit hid an empty result for me too." },
+        { who: "@mcmc-sampling-stan", at: 2900, reply: true, stance: "dis", tx: "Not universal — some tasks ship no /tests/ dir." },
+        { who: "@kv-store-grpc", at: 4300, reply: true, stance: "syn", tx: "Then generalize: open the artifact, don’t just trust exit 0." },
+      ] },
     { key: "Distillation", short: "Distillation", ang: 198, core: true, forum: false,
       crumb: "Beat 5 of 5 · Stage 3 · Distillation", title: "Surviving claims are distilled into the base",
       text: "Forum posts are consolidated into typed bundles — transferable insights, confirmed constraints, rejected hypotheses, pitfalls, checks, next steps. Vague advice is dropped; the bundle is written back to the shared base.",
@@ -84,6 +90,10 @@
   ];
   const N = BEATS.length;
   const SPINE_N = 10;
+  // Per-beat dwell (ms); the two forum beats linger so their live thread can play.
+  const DUR = [2400, 2600, 5000, 6000, 3000];
+  const BOUNDS = []; { let acc = 0; for (const d of DUR) { BOUNDS.push({ start: acc, end: acc + d }); acc += d; } }
+  const TOTAL_MS = BOUNDS[N - 1].end;
 
   // ---- State ----------------------------------------------------------------
   const S = { host: null, detail: null, svg: null, nodes: [], fAgents: [], spines: [],
@@ -172,12 +182,28 @@
       S.deltaEl.animate([{ opacity: 1, transform: "translateY(0)" }, { opacity: 0, transform: "translateY(-12px)" }], { duration: 1100, easing: "ease-out" });
     } else { S.deltaEl.setAttribute("opacity", "0"); }
   }
+  // Live forum thread (the two forum beats): posts arrive over the beat's dwell.
+  let liveThread = null;
+  function buildThread(b) {
+    const lbl = (s) => s === "syn" ? "synthesize" : s === "dis" ? "push back" : "agree";
+    const posts = b.thread.map((p) => `<div class="pst${p.reply ? " reply" : ""}"><div class="av">${sunHTML()}</div><div class="pb"><div class="who">${p.who}${p.stance ? ` <span class="stance ${p.stance}">${lbl(p.stance)}</span>` : ""}</div><div class="tx">${p.tx}</div></div></div>`).join("");
+    return `<div class="kc-forum livethread"><div class="fh"><span>${b.head}</span><span class="grounded">${b.grounded}</span></div>${posts}<div class="kc-typing"><span></span><span></span><span></span></div></div>`;
+  }
+  function updateThread(localT) {
+    if (!liveThread) return;
+    liveThread.posts.forEach((el, i) => el.classList.toggle("show", localT >= liveThread.thread[i].at));
+    const next = liveThread.thread.find((p) => localT < p.at);
+    if (liveThread.typing) liveThread.typing.classList.toggle("show", !!next && localT > 180);
+  }
   function activate(idx) {
     S.nodes.forEach((n, i) => { n.classList.toggle("on", i === idx); n.classList.toggle("dim", i !== idx); });
     tabs.forEach((t, i) => { const on = i === idx; t.classList.toggle("is-active", on); t.setAttribute("aria-pressed", on ? "true" : "false"); });
     const b = BEATS[idx];
+    const body = b.live ? buildThread(b) : b.detail();
     S.detail.innerHTML = `<div class="kc-fade"><div class="kc-crumb">${b.crumb}${b.core ? '<span class="core">core</span>' : ''}</div>
-      <h3 class="kc-dtitle">${b.title}</h3><p class="kc-dtext">${b.text}</p>${b.detail()}</div>`;
+      <h3 class="kc-dtitle">${b.title}</h3><p class="kc-dtext">${b.text}</p>${body}</div>`;
+    liveThread = b.live ? { posts: Array.prototype.slice.call(S.detail.querySelectorAll(".pst")), thread: b.thread, typing: S.detail.querySelector(".kc-typing") } : null;
+    if (liveThread && ctl.reducedMotion) updateThread(1e9);   // static: reveal the whole thread
     // forum agents gather at the active forum node
     S.fAgents.forEach((fa, k) => {
       if (b.forum) { const aa = (b.ang + (k - 1.5) * 26) * Math.PI / 180, rr = R - 30;
@@ -200,21 +226,21 @@
     if (!ctl.playing || !ctl.inView) { ctl.raf = null; return; }
     const dt = ctl.last ? (now - ctl.last) : 16; ctl.last = now;
     ctl.elapsed += dt * ctl.speed;
-    const total = N * ctl.stepMs;
-    if (ctl.elapsed >= total) {            // one full loop completed → advance a generation
-      ctl.elapsed -= total;
+    if (ctl.elapsed >= TOTAL_MS) {          // one full loop completed → advance a generation
+      ctl.elapsed -= TOTAL_MS;
       const next = ctl.gen + 1;
-      if (next >= NGEN) setGen(0, false);  // past gen 10 → loop back to gen 1 (no flash)
-      else setGen(next, true);             // advance, flash the +N gain
+      if (next >= NGEN) setGen(0, false);   // past gen 10 → loop back to gen 1 (no flash)
+      else setGen(next, true);              // advance, flash the +N gain
     }
-    const idx = Math.min(N - 1, Math.floor(ctl.elapsed / ctl.stepMs));
-    const frac = (ctl.elapsed - idx * ctl.stepMs) / ctl.stepMs;
+    let idx = N - 1; for (let i = 0; i < N; i++) { if (ctl.elapsed < BOUNDS[i].end) { idx = i; break; } }
+    const localT = ctl.elapsed - BOUNDS[idx].start, frac = localT / DUR[idx];
     const fromAng = BEATS[idx].ang, toAng = BEATS[(idx + 1) % N].ang + (idx === N - 1 ? 360 : 0);
-    const ang = fromAng + (toAng - fromAng) * ease(frac);
+    const ang = fromAng + (toAng - fromAng) * ease(clamp(frac, 0, 1));
     const pp = polar(ang, R);
     S.pulse.setAttribute("cx", pp.x); S.pulse.setAttribute("cy", pp.y);
     S.glow.setAttribute("cx", pp.x); S.glow.setAttribute("cy", pp.y);
     if (ctl.lastIdx !== idx) { activate(idx); if (BEATS[idx].key === "Distillation") distillStrike(); ctl.lastIdx = idx; }
+    updateThread(localT);
     ctl.raf = requestAnimationFrame(tick);
   }
 
@@ -222,7 +248,7 @@
   function syncPlayBtn() { if (!playBtn) return; playBtn.textContent = ctl.playing ? "⏸" : "▶"; playBtn.setAttribute("aria-label", ctl.playing ? "Pause" : "Play"); S.host.classList.toggle("is-paused", !ctl.playing); }
   function play() { if (ctl.reducedMotion) return; ctl.playing = true; ctl.userPaused = false; ctl.last = 0; if (!ctl.raf && ctl.inView) ctl.raf = requestAnimationFrame(tick); syncPlayBtn(); }
   function pause() { ctl.playing = false; if (ctl.raf) { cancelAnimationFrame(ctl.raf); ctl.raf = null; } syncPlayBtn(); }
-  function seekBeat(i) { ctl.elapsed = i * ctl.stepMs; ctl.lastIdx = -1; activate(i); ctl.lastIdx = i; if (!ctl.reducedMotion) play(); }
+  function seekBeat(i) { ctl.elapsed = BOUNDS[i].start; ctl.lastIdx = -1; activate(i); ctl.lastIdx = i; if (!ctl.reducedMotion) play(); }
   function restart() { ctl.elapsed = 0; ctl.lastIdx = -1; setGen(0, false); activate(0); ctl.lastIdx = 0; play(); }
   function setSpeed(s) { ctl.speed = s; speedBtns.forEach((b) => { const on = Number(b.dataset.speed) === s; b.classList.toggle("is-active", on); b.setAttribute("aria-pressed", on ? "true" : "false"); }); if (ctl.playing && !ctl.raf && ctl.inView && !ctl.reducedMotion) { ctl.last = 0; ctl.raf = requestAnimationFrame(tick); } }
 
