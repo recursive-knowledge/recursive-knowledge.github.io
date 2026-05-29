@@ -113,6 +113,7 @@
       KCSICharts.timeline(host, gens, {
         total: p.total_tasks || 1, height: 220,
         selectedGen: state.selectedGen,
+        flatBars: true,  // generation-by-generation summary: don't colorize bars by count
         onSelect: (g) => setSelectedGen(g),
       });
     }
