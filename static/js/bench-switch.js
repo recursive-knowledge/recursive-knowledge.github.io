@@ -44,7 +44,6 @@
       [50, 250, 600, 1200].forEach(function (d) { setTimeout(measure, d); });
     };
     frame.addEventListener("load", function () { measure(); observeContent(); });
-    setTimeout(function () { measure(); observeContent(); }, 0);
     window.addEventListener("resize", measure);
 
     const apply = () => {
@@ -53,7 +52,6 @@
       if (!bt) return;
       load(bt.dataset.summarySrc);
       if (fullLink && bt.dataset.fullSrc) fullLink.setAttribute("href", bt.dataset.fullSrc);
-      if (bt.textContent) frame.setAttribute("title", bt.textContent.trim() + " per-generation summary");
     };
 
     // Lazy: load the default benchmark's summary when the widget scrolls into view.
