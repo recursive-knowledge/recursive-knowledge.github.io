@@ -220,12 +220,14 @@
 
     const taskTitle = $("#generation-task-title");
     const taskBody = $("#generation-task-body");
-    taskTitle.textContent = `${entry.n_newly_solved || gen.delta || 0} newly solved ${cfg.taskNoun}${(entry.n_newly_solved || gen.delta || 0) === 1 ? "" : "s"}`;
+    taskTitle.textContent = "Task context";
     clear(taskBody);
+    const sourceTasks = featured.length ? featured : (gen.newly_solved || []).slice(0, 4);
     taskBody.appendChild(el("p", {}, featured.length
       ? `Representative ${cfg.taskNoun}s whose traces anchor this generation's evidence:`
-      : "No newly solved tasks were selected for this generation; the round primarily consolidates prior evidence."));
-    const sourceTasks = featured.length ? featured : (gen.newly_solved || []).slice(0, 4);
+      : sourceTasks.length
+        ? `Task traces anchoring this generation's evidence:`
+        : "This round consolidates evidence from prior task traces rather than pinning a single task."));
     if (sourceTasks.length) taskBody.appendChild(taskTags(sourceTasks));
     const note = featured.find((t) => t.note)?.note;
     if (note) taskBody.appendChild(el("p", { class: "generation-card-note" }, cleanText(note, 210)));
@@ -241,7 +243,7 @@
     clear(distilledBody);
     distilledBody.appendChild(el("div", { class: "generation-card-meta", text: `${insight.confidence || "derived"} confidence - ${insight.evidence_count || 0} evidence` }));
     distilledBody.appendChild(el("p", {}, cleanText(insight.full_text || insight.headline || "No distilled insight recorded for this generation.", 330)));
-    if (sourceTasks.length) distilledBody.appendChild(taskTags(sourceTasks));
+    distilledBody.appendChild(sourceTasks.length ? taskTags(sourceTasks) : taskTags([{ task_id: "bundle-wide" }]));
     if (insight.applies_when) {
       distilledBody.appendChild(el("ul", {}, el("li", {}, `Applies when: ${cleanText(insight.applies_when, 180)}`)));
     }
