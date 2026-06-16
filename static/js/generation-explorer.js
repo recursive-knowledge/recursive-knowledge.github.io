@@ -73,6 +73,14 @@
 
   const generationFor = (data, gen) => (data.generations || []).find((g) => g.gen === gen) || {};
   const highlightFor = (data, gen) => ((data.highlights || {}).per_gen || []).find((h) => h.gen === gen) || {};
+  const taskTags = (tasks) => {
+    const chips = el("div", { class: "generation-task-list" });
+    tasks.slice(0, 5).forEach((t) => {
+      chips.appendChild(el("span", { class: "generation-task-chip", text: t.task_id || "task" }));
+    });
+    if (tasks.length > 5) chips.appendChild(el("span", { class: "generation-task-chip", text: `+${tasks.length - 5}` }));
+    return chips;
+  };
 
   const setActiveTab = () => {
     $$(".generation-tab").forEach((tab) => {
@@ -217,13 +225,8 @@
     taskBody.appendChild(el("p", {}, featured.length
       ? `Representative ${cfg.taskNoun}s whose traces anchor this generation's evidence:`
       : "No newly solved tasks were selected for this generation; the round primarily consolidates prior evidence."));
-    const chips = el("div", { class: "generation-task-list" });
     const sourceTasks = featured.length ? featured : (gen.newly_solved || []).slice(0, 4);
-    sourceTasks.slice(0, 5).forEach((t) => {
-      chips.appendChild(el("span", { class: "generation-task-chip", text: t.task_id || "task" }));
-    });
-    if (sourceTasks.length > 5) chips.appendChild(el("span", { class: "generation-task-chip", text: `+${sourceTasks.length - 5}` }));
-    if (sourceTasks.length) taskBody.appendChild(chips);
+    if (sourceTasks.length) taskBody.appendChild(taskTags(sourceTasks));
     const note = featured.find((t) => t.note)?.note;
     if (note) taskBody.appendChild(el("p", { class: "generation-card-note" }, cleanText(note, 210)));
 
@@ -238,6 +241,7 @@
     clear(distilledBody);
     distilledBody.appendChild(el("div", { class: "generation-card-meta", text: `${insight.confidence || "derived"} confidence - ${insight.evidence_count || 0} evidence` }));
     distilledBody.appendChild(el("p", {}, cleanText(insight.full_text || insight.headline || "No distilled insight recorded for this generation.", 330)));
+    if (sourceTasks.length) distilledBody.appendChild(taskTags(sourceTasks));
     if (insight.applies_when) {
       distilledBody.appendChild(el("ul", {}, el("li", {}, `Applies when: ${cleanText(insight.applies_when, 180)}`)));
     }
