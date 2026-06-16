@@ -49,8 +49,10 @@
   const sunHTML = () => `<svg viewBox="-16 -16 32 32" aria-hidden="true">` +
     Array.from({ length: 12 }, (_, i) => { const a = i * 30 * Math.PI / 180, h = 7 * Math.PI / 180; const p = (r, x) => `${(r * Math.cos(x)).toFixed(1)},${(r * Math.sin(x)).toFixed(1)}`; return `<path d="M${p(2.6, a - h)} L${p(13, a - h)} L${p(13, a + h)} L${p(2.6, a + h)} Z" fill="var(--kc-c, var(--color-accent))"/>`; }).join("") + `</svg>`;
 
-  // Per-stage palette class (matches the paper figure: task-level=blue, cross-task=gold, distillation=green).
-  const STAGE = { "Task-level forum": "kc-s-blue", "Cross-task forum": "kc-s-gold", "Distillation": "kc-s-green" };
+  // Per-stage palette class. The curation trio matches the paper figure
+  // (task-level=blue, cross-task=gold, distillation=green); Seed/Attempt are the
+  // setup steps, kept neutral grey so they read as distinct from the trio.
+  const STAGE = { "Seed": "kc-s-neutral", "Attempt": "kc-s-neutral", "Task-level forum": "kc-s-blue", "Cross-task forum": "kc-s-gold", "Distillation": "kc-s-green" };
 
   // ---- Steps ----------------------------------------------------------------
   const BEATS = [
