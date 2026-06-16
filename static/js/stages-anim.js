@@ -47,13 +47,16 @@
   const pct = (g) => Math.round(CUMULATIVE[g] / TOTAL * 100);
 
   const sunHTML = () => `<svg viewBox="-16 -16 32 32" aria-hidden="true">` +
-    Array.from({ length: 12 }, (_, i) => { const a = i * 30 * Math.PI / 180, h = 7 * Math.PI / 180; const p = (r, x) => `${(r * Math.cos(x)).toFixed(1)},${(r * Math.sin(x)).toFixed(1)}`; return `<path d="M${p(2.6, a - h)} L${p(13, a - h)} L${p(13, a + h)} L${p(2.6, a + h)} Z" fill="var(--color-accent)"/>`; }).join("") + `</svg>`;
+    Array.from({ length: 12 }, (_, i) => { const a = i * 30 * Math.PI / 180, h = 7 * Math.PI / 180; const p = (r, x) => `${(r * Math.cos(x)).toFixed(1)},${(r * Math.sin(x)).toFixed(1)}`; return `<path d="M${p(2.6, a - h)} L${p(13, a - h)} L${p(13, a + h)} L${p(2.6, a + h)} Z" fill="var(--kc-c, var(--color-accent))"/>`; }).join("") + `</svg>`;
+
+  // Per-stage palette class (matches the paper figure: task-level=blue, cross-task=gold, distillation=green).
+  const STAGE = { "Task-level forum": "kc-s-blue", "Cross-task forum": "kc-s-gold", "Distillation": "kc-s-green" };
 
   // ---- Steps ----------------------------------------------------------------
   const BEATS = [
     { key: "Seed", short: "Seed", ang: -90, forum: false,
       crumb: "Seed", title: "A fresh agent seeds from the base",
-      text: "A fresh, stateless agent reads a distilled bundle — task-level plus cross-task guidance — from the shared base.",
+      text: "A fresh, stateless agent reads a distilled bundle from the shared base.",
       detail: () => `<div class="kc-seed"><span class="kc-lbl">Seed bundle → fresh agent</span>
         <div class="kc-row"><span class="t">task-level</span><span>Last attempt on this task missed the empty-artifact check.</span></div>
         <div class="kc-row"><span class="t">cross-task</span><span>Clean exit codes ≠ correctness — open the output.</span></div></div>` },
@@ -140,7 +143,7 @@
     const nodesG = el("g", { class: "kc-nodes" });
     S.nodes = BEATS.map((b) => {
       const p = polar(b.ang, R);
-      const g = el("g", { class: "kc-node" + (b.forum ? " isforum" : ""), transform: `translate(${p.x},${p.y})` });
+      const g = el("g", { class: "kc-node" + (b.forum ? " isforum" : "") + (STAGE[b.key] ? " " + STAGE[b.key] : ""), transform: `translate(${p.x},${p.y})` });
       g.appendChild(el("circle", { class: "ring2", r: 27 }));
       g.appendChild(el("circle", { class: "nbg", r: 23 }));
       g.appendChild(icon(b.key));
@@ -156,7 +159,7 @@
     // forum agents (gather at the active forum node)
     for (let i = 0; i < 4; i++) { const g = el("g", { class: "kc-fagent" }); const inner = el("g", { transform: "scale(0.5)" });
       for (let k = 0; k < 12; k++) { const a = k * 30 * Math.PI / 180, h = 7 * Math.PI / 180; const p = (r, x) => `${(r * Math.cos(x)).toFixed(1)},${(r * Math.sin(x)).toFixed(1)}`;
-        inner.appendChild(el("path", { d: `M${p(2.6, a - h)} L${p(13, a - h)} L${p(13, a + h)} L${p(2.6, a + h)} Z`, fill: "var(--color-accent)" })); }
+        inner.appendChild(el("path", { d: `M${p(2.6, a - h)} L${p(13, a - h)} L${p(13, a + h)} L${p(2.6, a + h)} Z`, fill: "var(--kc-c, var(--color-accent))" })); }
       g.appendChild(inner); nodesG.appendChild(g); S.fAgents.push(g); }
     svg.appendChild(nodesG);
 
@@ -199,6 +202,7 @@
     S.nodes.forEach((n, i) => { n.classList.toggle("on", i === idx); n.classList.toggle("dim", i !== idx); });
     tabs.forEach((t, i) => { const on = i === idx; t.classList.toggle("is-active", on); t.setAttribute("aria-pressed", on ? "true" : "false"); });
     const b = BEATS[idx];
+    S.detail.className = "kc-detail" + (STAGE[b.key] ? " " + STAGE[b.key] : "");
     const body = b.live ? buildThread(b) : b.detail();
     S.detail.innerHTML = `<div class="kc-fade"><div class="kc-crumb">${b.crumb}</div>
       <h3 class="kc-dtitle">${b.title}</h3><p class="kc-dtext">${b.text}</p>${body}</div>`;
@@ -207,8 +211,9 @@
     // forum agents gather at the active forum node
     S.fAgents.forEach((fa, k) => {
       if (b.forum) { const aa = (b.ang + (k - 1.5) * 26) * Math.PI / 180, rr = R - 30;
-        fa.setAttribute("transform", `translate(${(CX + rr * Math.cos(aa)).toFixed(1)},${(CY + rr * Math.sin(aa)).toFixed(1)})`); fa.classList.add("on"); }
-      else fa.classList.remove("on");
+        fa.setAttribute("transform", `translate(${(CX + rr * Math.cos(aa)).toFixed(1)},${(CY + rr * Math.sin(aa)).toFixed(1)})`);
+        fa.setAttribute("class", "kc-fagent on" + (STAGE[b.key] ? " " + STAGE[b.key] : "")); }
+      else fa.setAttribute("class", "kc-fagent");
     });
   }
   function distillStrike() {
@@ -248,7 +253,9 @@
   function syncPlayBtn() { if (!playBtn) return; playBtn.textContent = ctl.playing ? "⏸" : "▶"; playBtn.setAttribute("aria-label", ctl.playing ? "Pause" : "Play"); S.host.classList.toggle("is-paused", !ctl.playing); }
   function play() { if (ctl.reducedMotion) return; ctl.playing = true; ctl.userPaused = false; ctl.last = 0; if (!ctl.raf && ctl.inView) ctl.raf = requestAnimationFrame(tick); syncPlayBtn(); }
   function pause() { ctl.playing = false; if (ctl.raf) { cancelAnimationFrame(ctl.raf); ctl.raf = null; } syncPlayBtn(); }
-  function seekBeat(i) { ctl.elapsed = BOUNDS[i].start; ctl.lastIdx = -1; activate(i); ctl.lastIdx = i; if (!ctl.reducedMotion) play(); }
+  // Clicking a step jumps to it and PAUSES — it never auto-resumes. The forum
+  // steps reveal their full thread (no live typing) so the paused view isn't empty.
+  function seekBeat(i) { ctl.elapsed = BOUNDS[i].start; ctl.lastIdx = -1; activate(i); ctl.lastIdx = i; ctl.userPaused = true; pause(); updateThread(1e9); }
   function restart() { ctl.elapsed = 0; ctl.lastIdx = -1; setGen(0, false); activate(0); ctl.lastIdx = 0; play(); }
   function setSpeed(s) { ctl.speed = s; speedBtns.forEach((b) => { const on = Number(b.dataset.speed) === s; b.classList.toggle("is-active", on); b.setAttribute("aria-pressed", on ? "true" : "false"); }); if (ctl.playing && !ctl.raf && ctl.inView && !ctl.reducedMotion) { ctl.last = 0; ctl.raf = requestAnimationFrame(tick); } }
 
