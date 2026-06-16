@@ -680,6 +680,158 @@ def build_knowledge(db_path: Path) -> dict[str, Any]:
     }
 
 
+# ---------------------------------------------------------------- ARC highlights
+
+def _first_sentence_py(s: str, max_chars: int = 140) -> str:
+    if not s:
+        return ""
+    cleaned = " ".join(s.split())
+    if len(cleaned) <= max_chars:
+        return cleaned
+    window = cleaned[: max_chars + 1]
+    cut = max(window.rfind(" "), window.rfind(","), window.rfind(";"))
+    if cut < 40:
+        cut = max_chars
+    return cleaned[:cut].rstrip(" ,;") + "..."
+
+
+ARC_PINNED_PER_GEN: dict[int, dict[str, Any]] = {
+    1: {
+        "insight_prefix": "Before testing spatial transformations",
+        "caption": "The first bundle is broad because generation 1 solves many easy-to-medium ARC puzzles. The useful theme is not a single trick, but an ordering: find separators and regions before trying rotations or reflections.",
+        "featured": [("780d0b14", "A large separator-grid puzzle: the trace is a clean example of treating blank rows and columns as structure, then reading the regions they define.")],
+    },
+    2: {
+        "insight_prefix": "Before applying any inferred transformation rule",
+        "caption": "Generation 2 tightens the loop from visual guessing to executable validation. The bundle starts insisting that every proposed rule be run against all training pairs before touching the test grid.",
+        "featured": [("05f2a901", "A compact three-example puzzle where the important asset is the validation habit: a plausible rule is only useful after it reproduces every training output.")],
+    },
+    3: {
+        "insight_prefix": "For grid tasks involving sparse markers",
+        "caption": "The summary starts moving from generic validation toward ARC-specific primitives: sparse markers, bounding boxes, and positions as lookup keys.",
+        "featured": [("ea32f347", "A four-example puzzle that benefits from comparing explicit grid properties across examples instead of reading one pattern by eye.")],
+    },
+    4: {
+        "insight_prefix": "When inferring region-based rules",
+        "caption": "Generation 4 makes region extraction more explicit. The asset is to enumerate disconnected regions first, then test color or fill rules on those extracted objects.",
+        "featured": [("caa06a1f", "The newly solved puzzle is a good anchor for the region-first framing: extract the pieces, then validate the rule over the full training set.")],
+    },
+    5: {
+        "insight_prefix": "For region-classification tasks",
+        "caption": "Generation 5 consolidates the object view: connected components, bounding boxes, and feature tables become the reusable vocabulary for harder grid transformations.",
+        "featured": [("6455b5f5", "A multi-example puzzle where flood-fill style component extraction is the useful transferable operation, not just the final answer.")],
+    },
+    6: {
+        "insight_prefix": "Extract signed displacement vectors",
+        "caption": "No new puzzles solve in generation 6, but the bundle still changes: it records movement as signed displacement vectors instead of vague spatial language.",
+        "featured": [],
+    },
+    7: {
+        "insight_prefix": "Dynamically locate separator row",
+        "caption": "Generation 7 turns repeated separator failures into a more operational rule: locate structure from the current grid, not from hard-coded row or column indices.",
+        "featured": [("dc0a314f", "A 16x16 puzzle where the representative lesson is dynamic structural detection before applying the transformation.")],
+    },
+    8: {
+        "insight_prefix": "For same-row neighbor detection",
+        "caption": "With no new solves, the bundle sharpens implementation details. Neighbor detection is no longer prose; it becomes row-equality and column-equality tests.",
+        "featured": [],
+    },
+    9: {
+        "insight_prefix": "Same-row/column neighbor filtering",
+        "caption": "Generation 9 keeps the focus on making spatial primitives executable: same-row and same-column relations must be checked directly before expansion or fill rules are trusted.",
+        "featured": [],
+    },
+    10: {
+        "insight_prefix": "For grid-expansion or directional-fill tasks",
+        "caption": "The final bundle reads more like an ARC workbench: validation gates, separator scans, component extraction, marker loops, and truth tables rather than a single headline trick.",
+        "featured": [],
+    },
+}
+
+
+def _match_added(added: list[Any], prefix: str) -> dict[str, Any] | None:
+    if not added:
+        return None
+    norm_pref = (prefix or "").lower().strip()
+    for it in added:
+        if not isinstance(it, dict):
+            continue
+        text = (it.get("text") or it.get("insight") or "").strip().lower()
+        if norm_pref and text.startswith(norm_pref):
+            return it
+    for it in added:
+        if isinstance(it, dict):
+            return it
+    return None
+
+
+def _resolve_featured(featured: list[tuple[str, str]],
+                      tasks: dict[str, Any]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for tid, note in featured[:1]:
+        t = tasks.get(tid)
+        if not t:
+            continue
+        per_gen = t.get("per_gen") or []
+        fg = t.get("first_solved_gen")
+        failed = sorted({pg["gen"] for pg in per_gen
+                         if not pg.get("resolved") and pg.get("gen") is not None
+                         and fg is not None and pg["gen"] < fg})
+        out.append({
+            "task_id": tid,
+            "category": t.get("grid_shape", "") or "",
+            "difficulty": f"{t.get('n_train_pairs', '?')} train",
+            "first_solved_gen": fg,
+            "n_failed_before_solve": len(failed),
+            "note": note,
+        })
+    return out
+
+
+def compute_highlights(payload: dict[str, Any],
+                       knowledge: dict[str, Any] | None) -> dict[str, Any]:
+    tasks = payload.get("tasks", {}) or {}
+    per_gen_curated: list[dict[str, Any]] = []
+
+    knowledge_by_gen = {
+        slot.get("gen"): slot for slot in ((knowledge or {}).get("generations") or [])
+    }
+    newly_solved_by_gen = {
+        row.get("gen"): {n.get("task_id") for n in (row.get("newly_solved") or [])
+                         if n.get("task_id")}
+        for row in payload.get("generations", []) or []
+    }
+
+    for gen in sorted(ARC_PINNED_PER_GEN):
+        pin = ARC_PINNED_PER_GEN[gen]
+        slot = knowledge_by_gen.get(gen) or {}
+        delta = slot.get("cross_task_distill_delta") or {}
+        added = ((delta.get("transferable_insights") or {}).get("added") or [])
+        insight = _match_added(added, pin.get("insight_prefix", ""))
+        insight_payload: dict[str, Any] | None = None
+        if insight:
+            full_text = insight.get("text") or insight.get("insight") or ""
+            insight_payload = {
+                "headline": _first_sentence_py(full_text, 160),
+                "full_text": full_text,
+                "confidence": insight.get("confidence"),
+                "evidence_count": len(insight.get("evidence") or []),
+                "applies_when": insight.get("applies_when") or "",
+            }
+        per_gen_curated.append({
+            "gen": gen,
+            "caption": pin.get("caption", ""),
+            "insight": insight_payload,
+            "featured": _resolve_featured(pin.get("featured") or [], tasks),
+            "n_newly_solved": len(newly_solved_by_gen.get(gen, set())),
+        })
+
+    return {
+        "per_gen": per_gen_curated,
+        "curated": True,
+    }
+
+
 # ---------------------------------------------------------------- entry point
 
 def main(argv: list[str] | None = None) -> int:
@@ -728,9 +880,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     n_tx = emit_side_files(normalized, args.out.parent)
-    args.out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     n_kn_gens = 0
+    knowledge: dict[str, Any] | None = None
     if args.knowledge_db and args.knowledge_db.exists():
         knowledge = build_knowledge(args.knowledge_db)
         (args.out.parent / args.knowledge_out_name).write_text(
@@ -738,8 +890,12 @@ def main(argv: list[str] | None = None) -> int:
         )
         n_kn_gens = len(knowledge["generations"])
 
+    payload["highlights"] = compute_highlights(payload, knowledge)
+    args.out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
     k = payload["kpis"]
     n_grids = sum(len(t.get("attempts", [])) for t in normalized)
+    hl = payload["highlights"]
     print(
         f"wrote {args.out}\n"
         f"  tasks   = {payload['total_tasks']}\n"
@@ -749,7 +905,8 @@ def main(argv: list[str] | None = None) -> int:
         f"  gens    = {len(payload['generations'])}\n"
         f"  knowledge gens = {n_kn_gens}\n"
         f"  transcripts    = {n_tx}\n"
-        f"  attempt grids  = {n_grids}",
+        f"  attempt grids  = {n_grids}\n"
+        f"  highlights     = {len(hl['per_gen'])} generations",
         file=sys.stderr,
     )
     return 0

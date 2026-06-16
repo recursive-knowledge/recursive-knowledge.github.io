@@ -13,7 +13,7 @@
   "use strict";
 
   // Data URL is overridable so the same renderer drives other benchmarks
-  // (e.g. the auto-derived ARC summary sets window.__SUMMARY_DATA_URL).
+  // (e.g. the ARC summary sets window.__SUMMARY_DATA_URL).
   const DATA_URL = (typeof window !== "undefined" && window.__SUMMARY_DATA_URL) || "../../static/data/tb2_haiku.json";
 
   const state = {
@@ -50,7 +50,7 @@
   const fmtPct = (n) => `${(n ?? 0).toFixed(1)}%`;
   const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
-  // Some auto-picked insight texts arrive hard-truncated at the source (capped
+  // Some run-derived insight texts arrive hard-truncated at the source (capped
   // mid-word). Don't show a dangling fragment: trim back to the last full word
   // and append an ellipsis so it reads as "a little was elided".
   const _insightDisplay = (s) => {
@@ -239,6 +239,9 @@
             `${t.n_failed_before_solve} prior failed attempts`));
         }
         card.appendChild(tagrow);
+        if (t.note) {
+          card.appendChild(el("p", { class: "centerpiece-task-note" }, t.note));
+        }
         list.appendChild(card);
       }
       tasks.appendChild(list);
