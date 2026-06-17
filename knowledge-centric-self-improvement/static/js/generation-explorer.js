@@ -110,9 +110,9 @@
     const x = (i) => m.l + (gens.length === 1 ? iw / 2 : (i / (gens.length - 1)) * iw);
     const y = (g) => m.t + ih - ((g.cumulative || 0) / total) * ih;
     const points = gens.map((g, i) => `${x(i)},${y(g)}`).join(" ");
-    const accent = cssVar("--color-accent-hover", "#b36000");
+    const accent = cssVar("--color-accent-hover", "#4334b8");
     const muted = cssVar("--color-text-secondary", "#62626a");
-    const border = cssVar("--color-border", "#e4e1db");
+    const border = cssVar("--color-border", "#e3e2ec");
 
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
