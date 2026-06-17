@@ -273,7 +273,7 @@
   const boot = async () => {
     console.log("[summary] boot starting…");
     try {
-      const r = await fetch(DATA_URL, { cache: "no-store" });
+      const r = await fetch(DATA_URL);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       state.payload = await r.json();
       console.log(`[summary] loaded ${state.payload.total_tasks} tasks, ${state.payload.total_traces} trials, per_gen=${(state.payload.highlights?.per_gen || []).length}`);
