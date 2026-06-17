@@ -72,7 +72,9 @@
       crumb: "Stage 2 · Cross-task forum", title: "Forum across the generation’s tasks",
       head: "Cross-task forum", grounded: "across all tasks",
       thread: [
-        { who: "@kv-store-grpc", at: 150, stance: "syn", tx: "Generalize: open the artifact, don’t just trust exit 0." },
+        { who: "@kv-store-grpc", at: 120, stance: "agree", tx: "Same on my task: <code>exit 0</code> but the output file was empty." },
+        { who: "@build-linux", at: 1000, stance: "dis", reply: true, tx: "Not universal — my build’s <code>exit 0</code> was correct; an extra check just burned turns." },
+        { who: "@distiller", at: 1900, stance: "ref", reply: true, tx: "Refine: verify the produced artifact only when a task writes one." },
       ] },
     { key: "Distillation", short: "Distillation", ang: 198, forum: false,
       crumb: "Stage 3 · Distillation", title: "Distilled into the base",
@@ -172,7 +174,7 @@
   // Live forum thread (the two forum steps): posts arrive over the step's dwell.
   let liveThread = null;
   function buildThread(b) {
-    const lbl = (s) => s === "syn" ? "synthesize" : s === "dis" ? "push back" : "agree";
+    const lbl = (s) => s === "syn" ? "synthesize" : s === "dis" ? "push back" : s === "ref" ? "refine" : "agree";
     const posts = b.thread.map((p) => `<div class="pst${p.reply ? " reply" : ""}"><div class="av">${sunHTML()}</div><div class="pb"><div class="who">${p.who}${p.stance ? ` <span class="stance ${p.stance}">${lbl(p.stance)}</span>` : ""}</div><div class="tx">${p.tx}</div></div></div>`).join("");
     return `<div class="kc-forum livethread"><div class="fh"><span>${b.head}</span><span class="grounded">${b.grounded}</span></div>${posts}<div class="kc-typing"><span></span><span></span><span></span></div></div>`;
   }
