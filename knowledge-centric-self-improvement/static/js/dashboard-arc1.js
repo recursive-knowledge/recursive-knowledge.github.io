@@ -108,14 +108,11 @@
   const renderKpis = (host) => {
     const k = state.payload.kpis || {};
     const p = state.payload;
-    const totalTok = (k.total_input_tokens || 0) + (k.total_output_tokens || 0);
     const cards = [
       { label: "Solve rate", value: fmtPct(k.solved_pct),
         sub: `${k.solved} / ${p.total_tasks} tasks`, primary: true },
       { label: "Generations", value: String((p.generations || []).length),
         sub: `${fmtInt(p.total_traces || 0)} trials run` },
-      { label: "Total tokens", value: fmtInt(totalTok),
-        sub: `${fmtInt(k.total_input_tokens || 0)} in · ${fmtInt(k.total_output_tokens || 0)} out` },
     ];
     clear(host);
     for (const c of cards) {
