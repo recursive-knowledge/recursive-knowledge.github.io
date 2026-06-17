@@ -22,17 +22,20 @@ The repo-root `index.html` is a tiny redirect to it.
         index.html                 # dashboard hub
         tb2-haiku/        arc1-haiku/          # full per-task dashboards
         tb2-haiku-summary/ arc1-haiku-summary/ # curated per-generation summaries
-      static/{css,js,data,images}  # figures-subtree assets + per-task JSON
-      scripts/                     # build_tb2_dashboard.py, build_arc_dashboard.py
-    static/{css,js,images}         # root-page assets
-  mockups/                         # dev-only design candidates (not part of the live site)
-  docs/  reviews/                  # dev notes / review artifacts
+      static/{js,data,images}      # figures-subtree JS, per-task JSON, images
+      scripts/                     # build_{tb2,arc}_dashboard.py, declamp_insights.py
+    static/{css,js,images}         # shared CSS (served to every page) + landing assets
+  mockups/  docs/  reviews/        # dev-only; git-ignored, not deployed
 ```
 
-The landing page and the figures subtree each load their own copy of
-`static/css/style.css` + `static/css/main-anim.css`; keep theme tokens in the
-two `style.css` files in sync. The CSS links carry a `?v=` cache-bust query —
-bump it when shipping visual changes so returning visitors get the new styles.
+All pages share one stylesheet bundle under
+`knowledge-centric-self-improvement/static/css/` (`style.css`, `main-anim.css`,
+`dashboard.css`). The figures page keeps its own layout via a scoped
+`.page-figures` override block at the end of `style.css` (it sets
+`class="page-figures"` on its `<body>`); theme tokens live once in the `:root`
+of `style.css`, so an accent change applies site-wide. The CSS links carry a
+`?v=` cache-bust query — bump it when shipping visual changes so returning
+visitors get the new styles.
 
 ## Preview locally
 
@@ -52,25 +55,27 @@ the repo-root `index.html`. `.nojekyll` is present so directory-index URLs
 
 ## Updating figures
 
-The hero (`static/images/main_full.png`) and the two worked-trace exemplars
-(`static/images/stylized_arc2_example.png`, `stylized_tb2_example.png`) are the
-images actually rendered on the landing page. Convert the paper PDFs with
-Ghostscript (paths are relative to wherever the paper sources live):
+Images live in two trees and are referenced as follows:
+
+- **Landing page** (`knowledge-centric-self-improvement/index.html`) renders
+  `static/images/main_concept.png` and `static/images/main_scatter.png`;
+  `static/images/main_full.png` is the social-card image
+  (`og:image` / `twitter:image`).
+- **Figures hub** (`figures/index.html`) renders
+  `figures/static/images/framework.png`. The appendix exemplars
+  `figures/static/images/{arc2_example,tb2_example}.png` and
+  `static/images/stylized_tb2_example.png` are kept for the worked-example
+  section but are not currently referenced by a page.
+
+Regenerate any PNG from the paper PDFs with Ghostscript (transparent
+background — the CSS backs figures with a white card so they stay legible in
+both themes):
 
 ```bash
-cd knowledge-centric-self-improvement/static/images
-for f in main_full stylized_arc2_example stylized_tb2_example; do
-  gs -dQUIET -dNOPAUSE -dBATCH -sDEVICE=pngalpha -r200 \
-     -sOutputFile="${f}.png" \
-     "/path/to/paper/figures/${f}.pdf"
-done
+cd knowledge-centric-self-improvement     # then: static/images  or  figures/static/images
+gs -dQUIET -dNOPAUSE -dBATCH -sDEVICE=pngalpha -r200 \
+   -sOutputFile=NAME.png "/path/to/paper/figures/NAME.pdf"
 ```
-
-The figures hub (`knowledge-centric-self-improvement/figures/index.html`) uses
-the full appendix exemplars under
-`knowledge-centric-self-improvement/figures/static/images/` (`arc2_example.png`,
-`tb2_example.png`, `framework.png`, `main.png`) rather than the stylized
-versions. PNG/JPG figures can be copied directly from the paper's `figures/`.
 
 ## Dashboards & data
 
