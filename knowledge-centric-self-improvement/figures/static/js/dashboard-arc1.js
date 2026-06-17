@@ -304,7 +304,7 @@
   const ensureKnowledgeLoaded = async () => {
     if (state.knowledge !== null) return state.knowledge;
     try {
-      const r = await fetch(KNOWLEDGE_URL, { cache: "no-store" });
+      const r = await fetch(KNOWLEDGE_URL);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       state.knowledge = await r.json();
     } catch (err) {
@@ -730,10 +730,33 @@
     }
   };
 
+  // Defer the heavy knowledge.json fetch until the knowledge UI is approached,
+  // so the multi-MB payload never blocks first paint. Memoised + one-shot.
+  let _knowledgeLazyStarted = false;
+  const loadKnowledgeAndRender = () => {
+    if (_knowledgeLazyStarted) return;
+    _knowledgeLazyStarted = true;
+    ensureKnowledgeLoaded().then(() => {
+      safely("renderEvolutionStrip",    () => renderEvolutionStrip());
+      safely("renderEvolvingKnowledge", () => { renderEvolvingKnowledge(); });
+    });
+  };
+  const setupKnowledgeLazyLoad = () => {
+    renderEvolutionStrip();  // placeholder ("Loading…") — does not fetch
+    const added = $("#ek-added-body");
+    if (added) { clear(added); added.appendChild(el("div", { class: "loading" }, "Loading curated knowledge…")); }
+    const targets = ["#evolution-strip", "#evolving-knowledge"].map((s) => $(s)).filter(Boolean);
+    if (!("IntersectionObserver" in window) || !targets.length) { loadKnowledgeAndRender(); return; }
+    const io = new IntersectionObserver((entries, obs) => {
+      if (entries.some((e) => e.isIntersecting)) { obs.disconnect(); loadKnowledgeAndRender(); }
+    }, { rootMargin: "600px 0px" });
+    targets.forEach((t) => io.observe(t));
+  };
+
   const boot = async () => {
     console.log("[dashboard] boot starting…");
     try {
-      const r = await fetch(DATA_URL, { cache: "no-store" });
+      const r = await fetch(DATA_URL);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       state.payload = await r.json();
       console.log(`[dashboard] loaded ${state.payload.total_tasks} tasks, ${state.payload.total_traces} trials`);
@@ -751,11 +774,10 @@
         : (state.payload.generations?.[0]?.gen ?? 1);
     }
     safely("renderTimeline",          () => renderTimeline($("#chart-timeline")));
-    // Eagerly load knowledge.json so the evolution strip + centerpiece render
-    // in the right order on first paint (the strip needs the deltas).
-    await ensureKnowledgeLoaded();
-    safely("renderEvolutionStrip",    () => renderEvolutionStrip());
-    safely("renderEvolvingKnowledge", () => { renderEvolvingKnowledge(); });
+    // Lazily load knowledge.json only when the evolution strip /
+    // evolving-knowledge centerpiece nears the viewport, so it never blocks
+    // first paint. (Memoised; clicking a generation also triggers the load.)
+    safely("setupKnowledgeLazyLoad",  () => setupKnowledgeLazyLoad());
     safely("renderRunGlance",         () => renderRunGlance($("#run-glance")));
     safely("setupGenSlider",          () => setupGenSlider());
     safely("wireFilters",             () => wireFilters());

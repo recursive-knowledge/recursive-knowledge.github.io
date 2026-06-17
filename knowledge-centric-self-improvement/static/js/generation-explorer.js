@@ -64,7 +64,7 @@
 
   const loadBench = async (bench) => {
     if (state.cache[bench]) return state.cache[bench];
-    const res = await fetch(CONFIG[bench].dataUrl, { cache: "no-store" });
+    const res = await fetch(CONFIG[bench].dataUrl);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     state.cache[bench] = data;
