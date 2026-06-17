@@ -17,7 +17,6 @@ The repo-root `index.html` is a tiny redirect to it.
     index.html                     # landing page
     tb2-haiku/index.html           # Terminal-Bench 2 per-task dashboard (Haiku 4.5)
     arc1-haiku/index.html          # ARC-AGI-1 per-task dashboard (Haiku 4.5)
-    stage-anim/index.html          # standalone 3-stage curation animation (embed source)
     static/
       css/                         # style.css, main-anim.css, dashboard.css (shared by every page)
       js/                          # landing: generation-explorer.js, stages-anim.js
