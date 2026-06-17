@@ -1,18 +1,10 @@
-/* ARC-AGI-1 Haiku Dashboard — narrative-focused vanilla JS + D3 (window.KCSICharts)
- *
- * Forked from dashboard.js (the TB2 dashboard). Diffs:
- *   - DATA_URL / KNOWLEDGE_URL point to arc1_*.json instead of tb2_*.json.
- *   - renderTaskBody renders ARC grids (train pairs, test input, per-gen
- *     attempt grids) instead of TB2 narrative-only blocks.
- *   - Task-row header chip uses grid_shape + n_train_pairs instead of
- *     category / difficulty.
- */
+/* TB2 Haiku Dashboard — narrative-focused vanilla JS + D3 (window.KCSICharts) */
 (function () {
   "use strict";
 
-  const DATA_URL      = "../../static/data/arc1_haiku.json";
-  const KNOWLEDGE_URL = "../../static/data/arc1_knowledge.json";
-  const DATA_DIR      = "../../static/data";
+  const DATA_URL      = "../static/data/tb2_haiku.json";
+  const KNOWLEDGE_URL = "../static/data/knowledge.json";
+  const DATA_DIR      = "../static/data";
 
   const KNOWLEDGE_SECTIONS = [
     { key: "transferable_insights", title: "Transferable insights" },
@@ -62,33 +54,12 @@
   const classifyStatus = (task) => {
     if (task.resolved) return "resolved";
     const v = task.verifier_exit_code, a = task.agent_exit_code;
-    const hasExitCodes = ("verifier_exit_code" in task) || ("agent_exit_code" in task);
     const s = (task.trial_status || task.status || "").toLowerCase();
-    // Only treat a missing exit code as "infra" when the dataset carries exit
-    // codes at all — ARC traces don't, so a null there is not an infra signal.
-    if (s.includes("error") || s.includes("infra") || s.includes("verifier_did_not_produce") || (hasExitCodes && (v == null || a == null))) return "infra";
+    if (s.includes("error") || s.includes("infra") || s.includes("verifier_did_not_produce") || v == null || a == null) return "infra";
     return "failed";
   };
   const statusLabel = (s) =>
     ({ resolved: "Resolved", failed: "Failed", infra: "Infra issue" }[s] || "Unknown");
-
-  // ====================================================================== Timeline
-  const renderTimeline = (host) => {
-    const gens = state.payload.generations || [];
-    if (gens.length < 2) {
-      host.innerHTML = `<div class="empty">Single-generation run — no timeline.</div>`;
-      return;
-    }
-    const total = state.payload.total_tasks || 1;
-    if (window.KCSICharts) {
-      KCSICharts.timeline(host, gens, {
-        total, height: 260,
-        selectedGen: state.selectedEvolvingGen,
-        onSelect: (g) => setSelectedEvolvingGen(g),
-      });
-    }
-    host.style.cursor = "pointer";
-  };
 
   // ====================================================================== Lineage heatmap
   const renderGraph = (host) => {
@@ -295,7 +266,6 @@
   const setSelectedEvolvingGen = (gen) => {
     if (!Number.isFinite(gen)) return;
     state.selectedEvolvingGen = gen;
-    if (state.payload) renderTimeline($("#chart-timeline"));  // refresh bar bold
     renderEvolutionStrip();
     renderEvolvingKnowledge();
   };
@@ -450,48 +420,6 @@
     for (const t of items) host.appendChild(renderTaskRow(t));
   };
 
-  // ====================================================================== Grid renderer
-  /** Render a 2D int grid as a CSS-Grid of <div>s with .cell-N background
-   * classes. Uses divs rather than <td> because empty table cells collapse to
-   * zero height in most browsers, even with explicit width/height set. */
-  const renderGrid = (grid) => {
-    if (!Array.isArray(grid) || !grid.length) return el("div", { class: "grid-empty" }, "(no grid)");
-    const rows = grid.length;
-    const cols = Array.isArray(grid[0]) ? grid[0].length : 0;
-    // Choose cell size: 16 px for ≤10 cols, scale down to 8 px at 30 cols.
-    const dim = Math.max(rows, cols);
-    const px = dim <= 10 ? 16 : dim <= 20 ? 12 : 8;
-    const wrap = el("div", { class: "grid-canvas", "data-rows": String(rows), "data-cols": String(cols) });
-    wrap.style.setProperty("--cell-size", `${px}px`);
-    wrap.style.setProperty("--cols", String(cols));
-    wrap.style.setProperty("--rows", String(rows));
-    for (const row of grid) {
-      if (!Array.isArray(row)) continue;
-      for (const v of row) {
-        const n = Number.isInteger(v) ? v : 0;
-        const safe = Math.max(0, Math.min(9, n));
-        wrap.appendChild(el("div", { class: `cell-${safe}` }));
-      }
-    }
-    return wrap;
-  };
-
-  /** A labeled grid block (label on top, grid below). */
-  const renderGridBlock = (grid, label, opts = {}) => {
-    const block = el("div", { class: "grid-block" + (opts.correct === true ? " grid-correct" : opts.correct === false ? " grid-wrong" : "") });
-    if (label) block.appendChild(el("div", { class: "grid-label" }, label));
-    block.appendChild(renderGrid(grid));
-    return block;
-  };
-
-  /** A row of grid blocks (horizontally flowing, wraps as needed). */
-  const renderGridRow = (blocks) => {
-    const row = el("div", { class: "grid-row" });
-    for (const b of blocks) row.appendChild(b);
-    return row;
-  };
-
-  // ====================================================================== Task row + drill-down
   const renderTaskRow = (t) => {
     const status = classifyStatus(t);
     const head = el("div", { class: "task-row-head" },
@@ -500,7 +428,7 @@
       el("div", { class: "task-reward" }, fmtReward(t.best_reward)),
       el("div", { class: "task-tokens" },
         t.first_solved_gen != null ? `solved G${t.first_solved_gen}` : "—"),
-      el("div", { class: "task-cost" }, t.grid_shape ? `${t.grid_shape} · ${t.n_train_pairs || 0} train` : ""),
+      el("div", { class: "task-cost" }, t.category || ""),
       el("button", { class: "task-toggle", title: "Expand" }, "▸"),
     );
     const body = el("div", { class: "task-body" });
@@ -517,36 +445,15 @@
   };
 
   const renderTaskBody = (t, body) => {
-    // 1) Meta header
-    body.appendChild(el("div", { class: "gen-head" },
-      t.grid_shape    && el("span", {}, `test grid: ${t.grid_shape}`),
-      t.n_train_pairs && el("span", {}, `${t.n_train_pairs} train pairs`),
-      t.first_solved_gen != null
-        ? el("span", {}, `first solved at G${t.first_solved_gen}`)
-        : el("span", {}, "never solved"),
-    ));
-
-    // 2) Train pairs row (input → output for each pair)
-    if (Array.isArray(t.train_pairs) && t.train_pairs.length) {
-      const trainLabel = el("div", { class: "grid-section-label" }, "Train examples (input → output)");
-      body.appendChild(trainLabel);
-      const trainBlocks = [];
-      t.train_pairs.forEach((p, i) => {
-        trainBlocks.push(renderGridBlock(p.input,  `train ${i + 1} · input`));
-        trainBlocks.push(renderGridBlock(p.output, `train ${i + 1} · output`));
-      });
-      body.appendChild(renderGridRow(trainBlocks));
-    }
-
-    // 3) Test input row(s)
-    if (Array.isArray(t.test_inputs) && t.test_inputs.length) {
-      body.appendChild(el("div", { class: "grid-section-label" }, "Test input(s)"));
-      body.appendChild(renderGridRow(
-        t.test_inputs.map((g, i) => renderGridBlock(g, `test ${i + 1} · input`))
+    if (t.category || t.difficulty || t.first_solved_gen != null) {
+      body.appendChild(el("div", { class: "gen-head" },
+        t.category    && el("span", {}, `category: ${t.category}`),
+        t.difficulty  && el("span", {}, `difficulty: ${t.difficulty}`),
+        t.first_solved_gen != null
+          ? el("span", {}, `first solved at G${t.first_solved_gen}`)
+          : el("span", {}, "never solved"),
       ));
     }
-
-    // 4) Per-gen attempts. Each gen shows the agent's predicted grid(s).
     const gens = (t.per_gen || []).slice().sort((a, b) => a.gen - b.gen);
     for (const g of gens) {
       const mark = g.resolved ? "✓" : "✗";
@@ -554,32 +461,20 @@
       block.appendChild(el("div", { class: "gen-narrative-head" },
         el("span", { class: "gen-label" }, `${mark} Gen ${g.gen}`),
         el("span", {}, `reward ${fmtReward(g.reward)}`),
-        g.n_actions != null && el("span", { class: "gen-action-count" }, `${g.n_actions} tool actions`),
+        g.n_actions != null && el("span", { class: "gen-action-count" }, `${g.n_actions} actions`),
       ));
       if (g.error) {
         block.appendChild(el("div", { class: "error-note" }, g.error));
       }
-
-      const attempts = Array.isArray(g.attempts) ? g.attempts : [];
-      if (attempts.length) {
-        const attemptBlocks = attempts.map((a, i) => renderGridBlock(
-          a.grid,
-          `attempt ${i + 1}${a.correct === true ? " ✓" : a.correct === false ? " ✗" : ""}`,
-          { correct: a.correct },
-        ));
-        block.appendChild(renderGridRow(attemptBlocks));
-      } else if (!g.error) {
-        block.appendChild(el("div", { class: "narrative-empty" },
-          "(agent submitted no grid this generation)"));
-      }
-
       const steps = Array.isArray(g.step_summaries) ? g.step_summaries : [];
       if (steps.length) {
         const ul = el("ul", { class: "steps" });
         for (const s of steps) ul.appendChild(el("li", {}, s));
         block.appendChild(ul);
+      } else if (!g.error) {
+        block.appendChild(el("div", { class: "narrative-empty" },
+          "(no recorded actions — trial may have errored out before running anything)"));
       }
-
       if (g.has_transcript) {
         const actions = el("div", { class: "action-row" });
         const hostT = el("div", { class: "transcript-host" });
@@ -652,7 +547,6 @@
   // ====================================================================== Theme
   const onThemeChange = () => {
     if (!state.payload) return;
-    renderTimeline($("#chart-timeline"));
     if (state.activeTab === "lineage") renderGraph($("#chart-graph"));
   };
   new MutationObserver(onThemeChange)
@@ -731,7 +625,7 @@
   };
 
   // Defer the heavy knowledge.json fetch until the knowledge UI is approached,
-  // so the multi-MB payload never blocks first paint. Memoised + one-shot.
+  // so the ~16 MB never blocks first paint. Memoised + one-shot.
   let _knowledgeLazyStarted = false;
   const loadKnowledgeAndRender = () => {
     if (_knowledgeLazyStarted) return;
@@ -761,7 +655,7 @@
       state.payload = await r.json();
       console.log(`[dashboard] loaded ${state.payload.total_tasks} tasks, ${state.payload.total_traces} trials`);
     } catch (err) {
-      showError(`Could not load ${DATA_URL}: ${err.message}. Did you run scripts/build_arc_dashboard.py yet?`);
+      showError(`Could not load tb2_haiku.json: ${err.message}. Did you run scripts/build_tb2_dashboard.py yet?`);
       return;
     }
     safely("renderMeta",              () => renderMeta());
@@ -773,8 +667,7 @@
         ? firstWithSolves.gen
         : (state.payload.generations?.[0]?.gen ?? 1);
     }
-    safely("renderTimeline",          () => renderTimeline($("#chart-timeline")));
-    // Lazily load knowledge.json only when the evolution strip /
+    // Lazily load knowledge.json (~16 MB) only when the evolution strip /
     // evolving-knowledge centerpiece nears the viewport, so it never blocks
     // first paint. (Memoised; clicking a generation also triggers the load.)
     safely("setupKnowledgeLazyLoad",  () => setupKnowledgeLazyLoad());
