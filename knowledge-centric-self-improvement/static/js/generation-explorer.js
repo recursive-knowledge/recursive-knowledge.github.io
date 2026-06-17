@@ -10,14 +10,14 @@
   const CONFIG = {
     tb2: {
       label: "Terminal-Bench 2",
-      dataUrl: "figures/static/data/tb2_haiku.json",
-      fullUrl: "figures/dashboard/tb2-haiku/",
+      dataUrl: "static/data/tb2_haiku.json",
+      fullUrl: "tb2-haiku/",
       taskNoun: "task",
     },
     arc1: {
       label: "ARC-AGI-1",
-      dataUrl: "figures/static/data/arc1_haiku.json",
-      fullUrl: "figures/dashboard/arc1-haiku/",
+      dataUrl: "static/data/arc1_haiku.json",
+      fullUrl: "arc1-haiku/",
       taskNoun: "puzzle",
     },
   };

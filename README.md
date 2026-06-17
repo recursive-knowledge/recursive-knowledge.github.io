@@ -1,6 +1,6 @@
 # Project Website &mdash; Knowledge-Centric Self-Improvement
 
-Static landing page and interactive figures/dashboards for the paper. Plain
+Static landing page and interactive per-task dashboards for the paper. Plain
 HTML/CSS/JS, no build step. Deployed via GitHub Pages.
 
 ## Layout
@@ -14,28 +14,24 @@ The repo-root `index.html` is a tiny redirect to it.
   index.html                       # redirect: bare domain -> /knowledge-centric-self-improvement/
   .nojekyll                        # serve directory-index URLs as-is (no Jekyll)
   knowledge-centric-self-improvement/
-    index.html                     # main landing page
+    index.html                     # landing page
+    tb2-haiku/index.html           # Terminal-Bench 2 per-task dashboard (Haiku 4.5)
+    arc1-haiku/index.html          # ARC-AGI-1 per-task dashboard (Haiku 4.5)
     stage-anim/index.html          # standalone 3-stage curation animation (embed source)
-    figures/
-      index.html                   # figures hub (fuller paper page)
-      dashboard/
-        index.html                 # dashboard hub
-        tb2-haiku/        arc1-haiku/          # full per-task dashboards
-        tb2-haiku-summary/ arc1-haiku-summary/ # curated per-generation summaries
-      static/{js,data,images}      # figures-subtree JS, per-task JSON, images
-      scripts/                     # build_{tb2,arc}_dashboard.py, declamp_insights.py
-    static/{css,js,images}         # shared CSS (served to every page) + landing assets
-  mockups/  docs/  reviews/        # dev-only; git-ignored, not deployed
+    static/
+      css/                         # style.css, main-anim.css, dashboard.css (shared by every page)
+      js/                          # landing: generation-explorer.js, stages-anim.js
+                                   # dashboards: d3-charts.js, dashboard.js, dashboard-arc1.js
+      data/                        # *_haiku.json, *_knowledge.json + per-task transcripts/
+      images/                      # landing images
+    scripts/                       # build_{tb2,arc}_dashboard.py, declamp_insights.py
 ```
 
 All pages share one stylesheet bundle under
 `knowledge-centric-self-improvement/static/css/` (`style.css`, `main-anim.css`,
-`dashboard.css`). The figures page keeps its own layout via a scoped
-`.page-figures` override block at the end of `style.css` (it sets
-`class="page-figures"` on its `<body>`); theme tokens live once in the `:root`
-of `style.css`, so an accent change applies site-wide. The CSS links carry a
-`?v=` cache-bust query — bump it when shipping visual changes so returning
-visitors get the new styles.
+`dashboard.css`); theme tokens live once in the `:root` of `style.css`, so an
+accent change applies site-wide. The CSS links carry a `?v=` cache-bust query —
+bump it when shipping visual changes so returning visitors get the new styles.
 
 ## Preview locally
 
@@ -47,44 +43,36 @@ python3 -m http.server 8000   # run from the repo root
 
 ## Deploy
 
-This repo is itself the GitHub Pages site. The page is served at
+This repo is itself the GitHub Pages site, served at
 `/knowledge-centric-self-improvement/`; the bare Pages URL redirects there via
 the repo-root `index.html`. `.nojekyll` is present so directory-index URLs
-(`knowledge-centric-self-improvement/figures/dashboard/`) resolve to their
-`index.html`.
-
-## Updating figures
-
-Images live in two trees and are referenced as follows:
-
-- **Landing page** (`knowledge-centric-self-improvement/index.html`) renders
-  `static/images/main_concept.png` and `static/images/main_scatter.png`;
-  `static/images/main_full.png` is the social-card image
-  (`og:image` / `twitter:image`).
-- **Figures hub** (`figures/index.html`) renders
-  `figures/static/images/framework.png`. The appendix exemplars
-  `figures/static/images/{arc2_example,tb2_example}.png` and
-  `static/images/stylized_tb2_example.png` are kept for the worked-example
-  section but are not currently referenced by a page.
-
-Regenerate any PNG from the paper PDFs with Ghostscript (transparent
-background — the CSS backs figures with a white card so they stay legible in
-both themes):
-
-```bash
-cd knowledge-centric-self-improvement     # then: static/images  or  figures/static/images
-gs -dQUIET -dNOPAUSE -dBATCH -sDEVICE=pngalpha -r200 \
-   -sOutputFile=NAME.png "/path/to/paper/figures/NAME.pdf"
-```
+(`knowledge-centric-self-improvement/tb2-haiku/`) resolve to their `index.html`.
 
 ## Dashboards & data
 
-The dashboards read per-run JSON from
-`knowledge-centric-self-improvement/figures/static/data/` (`tb2_haiku.json`,
+The dashboards (`tb2-haiku/`, `arc1-haiku/`) read per-run JSON from
+`knowledge-centric-self-improvement/static/data/` (`tb2_haiku.json`,
 `arc1_haiku.json`, `knowledge.json`, `arc1_knowledge.json`) plus per-task
-transcripts/traces under `.../figures/static/data/{transcripts,arc1_transcripts,tool_traces}/`.
-Regenerate the JSON (and its transcript side-files) with the builders in
-`knowledge-centric-self-improvement/figures/scripts/`.
+transcripts under `.../static/data/{transcripts,arc1_transcripts}/`.
+`knowledge.json` is large and is lazy-loaded (IntersectionObserver) only when
+the evolving-knowledge section nears the viewport. The landing page also reads
+`static/data/{tb2,arc1}_haiku.json` for its generation explorer. Regenerate the
+JSON (and its transcript side-files) with the builders in
+`knowledge-centric-self-improvement/scripts/`.
+
+## Images
+
+The landing page renders `static/images/main_concept.png` and
+`static/images/main_scatter.png`; `static/images/main_full.png` is the
+social-card image (`og:image` / `twitter:image`). Regenerate any PNG from the
+paper PDFs with Ghostscript (transparent background; the CSS backs figures with
+a white card so they stay legible in both themes):
+
+```bash
+cd knowledge-centric-self-improvement/static/images
+gs -dQUIET -dNOPAUSE -dBATCH -sDEVICE=pngalpha -r200 \
+   -sOutputFile=NAME.png "/path/to/paper/figures/NAME.pdf"
+```
 
 ## Content sources
 
