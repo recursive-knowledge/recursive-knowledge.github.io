@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Build the static tb2 Haiku dashboard payload.
 
-Reads a Knowledge-Centric / TB2 campaign artifact tree as produced by
-``swarms.cli`` on ``terminal_bench_2``. The expected canonical input is the
-aggregate output JSON written by the campaign runner, e.g.::
+Reads a Knowledge-Centric / TB2 campaign artifact tree. The expected canonical
+input is the aggregate output JSON written by the campaign runner, e.g.::
 
     results/baseline_sweep_haiku_20260505b/tb2.json
 
@@ -52,6 +51,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sqlite3
 import sys
 from collections import Counter, defaultdict
@@ -69,6 +69,39 @@ EXCERPT_LIMIT = 1200
 TRANSCRIPT_LIMIT = 600_000
 TOOL_OUTPUT_LIMIT = 4000
 
+TB2_PRIVATE_SOURCE_RE = re.compile(
+    r"/data/[^/\s\"'`]+/Projects/sw[ao]rms/benchmarks/terminal_bench_2/source/?"
+)
+TB2_PRIVATE_TRUNCATED_SOURCE_RE = re.compile(
+    r"/data/[^/\s\"'`]+/Projects/sw[ao]rms/benchmar[^\s\"'`,)]*"
+)
+PRIVATE_WORKSPACE_RE = re.compile(r"/data/[^/\s\"'`]+/Projects/sw[ao]rms/?")
+INTERNAL_TB2_LABEL_RE = re.compile(r"\bsw[ao]rms-tb2-")
+INTERNAL_TB2_PATH_RE = re.compile(r"\bsw[ao]rms-tb2/")
+INTERNAL_TB2_NAME_RE = re.compile(r"\bsw[ao]rms-tb2\b")
+INTERNAL_PROJECT_PREFIX_RE = re.compile(r"\bsw[ao]rms-")
+
+
+def _sanitize_public_text(text: str) -> str:
+    text = TB2_PRIVATE_SOURCE_RE.sub("[tb2-source]/", text)
+    text = TB2_PRIVATE_TRUNCATED_SOURCE_RE.sub("[tb2-source]/...", text)
+    text = PRIVATE_WORKSPACE_RE.sub("[private-workspace]/", text)
+    text = INTERNAL_TB2_LABEL_RE.sub("tb2-", text)
+    text = INTERNAL_TB2_PATH_RE.sub("tb2/", text)
+    text = INTERNAL_TB2_NAME_RE.sub("tb2", text)
+    text = INTERNAL_PROJECT_PREFIX_RE.sub("tb2-", text)
+    return text.replace("sw" + "arms.cli", "campaign runner")
+
+
+def _sanitize_public_obj(value: Any) -> Any:
+    if isinstance(value, str):
+        return _sanitize_public_text(value)
+    if isinstance(value, list):
+        return [_sanitize_public_obj(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _sanitize_public_obj(v) for k, v in value.items()}
+    return value
+
 
 def _excerpt(text: str | None, limit: int = EXCERPT_LIMIT) -> dict[str, Any]:
     if not text:
@@ -82,8 +115,8 @@ def _safe_str(x: Any) -> str:
     if x is None:
         return ""
     if isinstance(x, str):
-        return x
-    return str(x)
+        return _sanitize_public_text(x)
+    return _sanitize_public_text(str(x))
 
 
 def _cost_usd(tokens: dict[str, int], price: dict[str, float]) -> float:
@@ -779,7 +812,7 @@ def build_knowledge(db_path: Path) -> dict[str, Any]:
         if not c:
             return None
         try:
-            return json.loads(c)
+            return _sanitize_public_obj(json.loads(c))
         except (TypeError, json.JSONDecodeError):
             return None
 
@@ -815,7 +848,7 @@ def build_knowledge(db_path: Path) -> dict[str, Any]:
             if text:
                 raw_insights_by_gen[gen].append({
                     "gen": gen, "task_id": task_id, "agent_id": agent_id,
-                    "text": text[:1200],
+                    "text": _safe_str(text)[:1200],
                 })
 
     generations = []
@@ -875,7 +908,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"loading {args.input} ({args.input.stat().st_size/1024/1024:.0f} MB)…",
           file=sys.stderr, flush=True)
     with args.input.open() as f:
-        doc = json.load(f)
+        doc = _sanitize_public_obj(json.load(f))
     traces = doc.get("traces") if isinstance(doc, dict) else None
     if not isinstance(traces, list) or not traces:
         print("error: no traces[] in input", file=sys.stderr)
@@ -896,12 +929,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.knowledge_db and args.knowledge_db.exists():
         knowledge = build_knowledge(args.knowledge_db)
         (args.out.parent / "knowledge.json").write_text(
-            json.dumps(knowledge, indent=2), encoding="utf-8"
+            json.dumps(_sanitize_public_obj(knowledge), indent=2), encoding="utf-8"
         )
         n_kn_gens = len(knowledge["generations"])
 
     payload["highlights"] = compute_highlights(payload, knowledge)
-    args.out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    args.out.write_text(json.dumps(_sanitize_public_obj(payload), indent=2), encoding="utf-8")
 
     k = payload["kpis"]
     hl = payload["highlights"]
