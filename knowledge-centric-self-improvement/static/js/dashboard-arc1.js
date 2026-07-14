@@ -1,4 +1,4 @@
-/* ARC-AGI-1 Haiku Dashboard — narrative-focused vanilla JS + D3 (window.KCSICharts)
+/* ARC-AGI-1 Haiku Dashboard — narrative-focused vanilla JS + D3 (window.KSICharts)
  *
  * Forked from dashboard.js (the TB2 dashboard). Diffs:
  *   - DATA_URL / KNOWLEDGE_URL point to arc1_*.json instead of tb2_*.json.
@@ -100,7 +100,7 @@
       }
       z.push(row);
     }
-    if (window.KCSICharts) KCSICharts.heatmap(host, { taskIds, gens, z });
+    if (window.KSICharts) KSICharts.heatmap(host, { taskIds, gens, z });
     $("#tab-count-lineage").textContent = taskIds.length;
   };
 

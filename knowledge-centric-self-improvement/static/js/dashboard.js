@@ -1,4 +1,4 @@
-/* TB2 Haiku Dashboard — narrative-focused vanilla JS + D3 (window.KCSICharts) */
+/* TB2 Haiku Dashboard — narrative-focused vanilla JS + D3 (window.KSICharts) */
 (function () {
   "use strict";
 
@@ -89,7 +89,7 @@
       }
       z.push(row);
     }
-    if (window.KCSICharts) KCSICharts.heatmap(host, { taskIds, gens, z });
+    if (window.KSICharts) KSICharts.heatmap(host, { taskIds, gens, z });
     $("#tab-count-lineage").textContent = taskIds.length;
   };
 

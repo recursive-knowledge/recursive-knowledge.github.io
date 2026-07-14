@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Cosmetic cleanup for hard-clamped insight text in the dashboard data files.
 
-Upstream (pre-#690) KCSI distillation wrote insight `text` with a hard
+Upstream (pre-#690) KSI distillation wrote insight `text` with a hard
 ``text[:cap]`` slice, cutting operative clauses mid-word (e.g. "...not
 agent-logic fa"). The full text was never persisted, so it cannot be restored
 — this only makes the surviving truncation *read* as intentional: back the cut

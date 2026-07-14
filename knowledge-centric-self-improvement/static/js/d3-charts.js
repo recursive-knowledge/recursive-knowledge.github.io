@@ -1,17 +1,17 @@
-/* Shared D3 charts for the KCSI dashboards (replaces Plotly).
- * Exposes window.KCSICharts.{ timeline, heatmap }. Each chart is responsive
+/* Shared D3 charts for the KSI dashboards (replaces Plotly).
+ * Exposes window.KSICharts.{ timeline, heatmap }. Each chart is responsive
  * (re-renders on container resize) and theme-aware (re-renders on data-theme
  * change), reading colors from the page's --color-* tokens. Honest data only.
  */
 (function () {
   "use strict";
-  const NS = (window.KCSICharts = window.KCSICharts || {});
+  const NS = (window.KSICharts = window.KSICharts || {});
   const cssVar = (n, fb) => (getComputedStyle(document.documentElement).getPropertyValue(n).trim() || fb);
 
   // Registry + shared observers so every chart re-renders on resize / theme flip.
   const registry = new Set();
   const rerender = () => registry.forEach((h) => {
-    if (h.isConnected && typeof h.__kcsiRender === "function") h.__kcsiRender();
+    if (h.isConnected && typeof h.__ksiRender === "function") h.__ksiRender();
     else registry.delete(h);
   });
   if (!NS._obs) {
@@ -23,7 +23,7 @@
     if (typeof window.addEventListener === "function") window.addEventListener("resize", rerender);
   }
   const register = (host, draw) => {
-    host.__kcsiRender = draw;
+    host.__ksiRender = draw;
     registry.add(host);
     if (NS._ro) { try { NS._ro.observe(host); } catch (e) {} }
     draw();
