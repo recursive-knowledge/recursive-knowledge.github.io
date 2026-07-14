@@ -42,13 +42,13 @@
       const iw = Math.max(20, W - m.l - m.r), ih = Math.max(20, H - m.t - m.b);
       const total = opts.total || d3.max(gens, (g) => g.cumulative) || 1;
       const sel = opts.selectedGen;
-      const accent = cssVar("--color-accent", "#DA7800");
-      const accentLight = cssVar("--color-accent-light", "#fbeede");
+      const accent = cssVar("--color-accent", "#c45e3b");
+      const accentLight = cssVar("--color-accent-light", "#f6e7df");
       const warmHigh = cssVar("--color-warm-high", "#b10026");
-      const ink = cssVar("--color-text", "#1a1a1c");
+      const ink = cssVar("--color-text", "#1d1c1a");
       const cool = cssVar("--color-cool", "#0e7490");
-      const muted = cssVar("--color-text-secondary", "#71717a");
-      const lineC = cssVar("--color-border", "#e4e1db");
+      const muted = cssVar("--color-text-secondary", "#5e5b54");
+      const lineC = cssVar("--color-border", "#e7e3d8");
 
       host.innerHTML = "";
       const svg = d3.select(host).append("svg")
@@ -120,10 +120,10 @@
       const cw = plotW / gens.length;
       const H = top + taskIds.length * cell + botPad;
       const warmLow = cssVar("--color-warm-low", "#fff8e6");
-      const accentLight = cssVar("--color-accent-light", "#e3f1f4");
+      const accentLight = cssVar("--color-bg-alt", "#f1efe7");
       const resolved = cssVar("--status-resolved", "#356859");
-      const muted = cssVar("--color-text-secondary", "#71717a");
-      const lineC = cssVar("--color-border-light", "#edebe6");
+      const muted = cssVar("--color-text-secondary", "#5e5b54");
+      const lineC = cssVar("--color-border-light", "#efece3");
       const color = (v) => (v <= 0.5 ? d3.interpolateRgb(warmLow, accentLight)(v / 0.5) : d3.interpolateRgb(accentLight, resolved)((v - 0.5) / 0.5));
 
       host.innerHTML = "";
