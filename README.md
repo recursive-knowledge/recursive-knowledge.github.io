@@ -1,20 +1,25 @@
-# Project Website &mdash; Knowledge-Centric Self-Improvement
+# recursive-knowledge.github.io
 
-Static landing page and interactive per-task dashboards for the paper. Plain
-HTML/CSS/JS, no build step. Deployed via GitHub Pages.
+The Recursive Knowledge org site. The repo-root `index.html` is the org landing
+page; the Knowledge-Centric Self-Improvement paper site &mdash; landing plus
+interactive per-task dashboards &mdash; lives under
+`knowledge-centric-self-improvement/`. Plain HTML/CSS/JS, no build step. Deployed
+via GitHub Pages.
 
 ## Layout
 
-The site is served from the `knowledge-centric-self-improvement/` subfolder
-(at `https://recursive-knowledge.github.io/knowledge-centric-self-improvement/`).
-The repo-root `index.html` is a tiny redirect to it.
+The repo root is the Recursive Knowledge landing page
+(`https://recursive-knowledge.github.io/`). The paper site is served from the
+`knowledge-centric-self-improvement/` subfolder (at
+`https://recursive-knowledge.github.io/knowledge-centric-self-improvement/`) and
+links out to the KSI docs and code.
 
 ```
 .
-  index.html                       # redirect: bare domain -> /knowledge-centric-self-improvement/
+  index.html                       # Recursive Knowledge org landing page
   .nojekyll                        # serve directory-index URLs as-is (no Jekyll)
   knowledge-centric-self-improvement/
-    index.html                     # landing page
+    index.html                     # paper landing page / blog
     tb2-haiku/index.html           # Terminal-Bench 2 per-task dashboard (Haiku 4.5)
     arc1-haiku/index.html          # ARC-AGI-1 per-task dashboard (Haiku 4.5)
     static/
@@ -36,16 +41,17 @@ bump it when shipping visual changes so returning visitors get the new styles.
 
 ```bash
 python3 -m http.server 8000   # run from the repo root
-# open http://localhost:8000/   (redirects to the page below)
-# or open http://localhost:8000/knowledge-centric-self-improvement/ directly
+# open http://localhost:8000/                                    (org landing page)
+# open http://localhost:8000/knowledge-centric-self-improvement/ (paper site)
 ```
 
 ## Deploy
 
-This repo is itself the GitHub Pages site, served at
-`/knowledge-centric-self-improvement/`; the bare Pages URL redirects there via
-the repo-root `index.html`. `.nojekyll` is present so directory-index URLs
-(`knowledge-centric-self-improvement/tb2-haiku/`) resolve to their `index.html`.
+This repo is itself the GitHub Pages site. The bare Pages URL
+(`https://recursive-knowledge.github.io/`) serves the org landing page; the paper
+site lives under `/knowledge-centric-self-improvement/`. `.nojekyll` is present so
+directory-index URLs (`knowledge-centric-self-improvement/tb2-haiku/`) resolve to
+their `index.html`.
 
 ## Dashboards & data
 
