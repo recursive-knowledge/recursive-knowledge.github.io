@@ -472,29 +472,6 @@
         block.appendChild(el("div", { class: "narrative-empty" },
           "(no recorded actions — trial may have errored out before running anything)"));
       }
-      if (g.has_transcript) {
-        const actions = el("div", { class: "action-row" });
-        const hostT = el("div", { class: "transcript-host" });
-        actions.appendChild(el("button", {
-          class: "btn-mini",
-          onclick: async () => {
-            if (hostT.classList.contains("open")) { hostT.classList.remove("open"); return; }
-            if (!hostT.dataset.loaded) {
-              try {
-                const r = await fetch(`${DATA_DIR}/${g.transcript_path}`);
-                if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                hostT.appendChild(el("pre", {}, await r.text()));
-              } catch (err) {
-                hostT.appendChild(el("pre", {}, `(failed to load transcript: ${err.message})`));
-              }
-              hostT.dataset.loaded = "1";
-            }
-            hostT.classList.add("open");
-          },
-        }, "Open full transcript"));
-        block.appendChild(actions);
-        block.appendChild(hostT);
-      }
       body.appendChild(block);
     }
   };
