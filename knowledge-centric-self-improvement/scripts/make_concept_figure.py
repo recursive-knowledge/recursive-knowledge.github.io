@@ -41,6 +41,11 @@ KEEP_SAT, KEEP_VAL = 0.35, 0.60
 STROKE_LIGHT = (29, 28, 26)     # --color-text, light theme
 STROKE_DARK = (233, 231, 226)   # --color-text, dark theme
 
+# The paper's Figure 1 bleeds the left arrow to its bounding-box edge, so the
+# crop starts flush against that arrow and it reads as truncated. Add a
+# transparent margin (fraction of the cropped width) so the artwork breathes.
+MARGIN_X, MARGIN_Y = 0.05, 0.03
+
 HERE = Path(__file__).resolve().parent
 IMAGES = HERE.parent / "static" / "images"
 DEFAULT_PDF = Path.home() / "Projects/Swarm-COLM-2026/figures/main.pdf"
@@ -86,6 +91,14 @@ def crop_concept_panels(im: Image.Image) -> Image.Image:
                     min(cols.max() + pad + 1, cut), min(rows.max() + pad + 1, lum.shape[0])))
 
 
+def pad_canvas(im: Image.Image) -> Image.Image:
+    """Center the recolored (transparent) art on a larger transparent canvas."""
+    mx, my = round(im.width * MARGIN_X), round(im.height * MARGIN_Y)
+    canvas = Image.new("RGBA", (im.width + 2 * mx, im.height + 2 * my), (0, 0, 0, 0))
+    canvas.paste(im, (mx, my), im)
+    return canvas
+
+
 def recolor(im: Image.Image, stroke: tuple[int, int, int]) -> Image.Image:
     src = np.array(im.convert("RGB")).astype(float) / 255.0
     r, g, b = src[..., 0], src[..., 1], src[..., 2]
@@ -117,8 +130,9 @@ def main() -> None:
     IMAGES.mkdir(parents=True, exist_ok=True)
     for stroke, name in ((STROKE_LIGHT, "main_concept.png"),
                          (STROKE_DARK, "main_concept_dark.png")):
-        recolor(panels, stroke).save(IMAGES / name)
-        print(f"wrote {IMAGES / name}  ({panels.size[0]}x{panels.size[1]})")
+        art = pad_canvas(recolor(panels, stroke))
+        art.save(IMAGES / name)
+        print(f"wrote {IMAGES / name}  ({art.size[0]}x{art.size[1]})")
 
 
 if __name__ == "__main__":
