@@ -91,6 +91,54 @@ def pad_canvas(im: Image.Image) -> Image.Image:
     return canvas
 
 
+def heal_left_barb(im: Image.Image) -> Image.Image:
+    """Round off the left arrowhead barb, which Figma clipped flat on export.
+
+    The agent-centric arrow's left barb runs off the artboard's left edge, so
+    the exported PDF cuts it to a flat vertical stub (there is no editable
+    source to re-export). Detect that stub &mdash; a tall run of the cool arrow
+    colour at the leftmost edge of the arrow region &mdash; and cap it with a
+    half-disc in the barb's own colour, matching the arrow's round stroke ends.
+    Runs on the padded canvas so the cap has transparent room to grow into. If
+    the barb is not clipped (a short, pointed run), it is a no-op, so a future
+    un-clipped export needs no code change.
+    """
+    arr = np.array(im).astype(float)
+    h, w, _ = arr.shape
+    al, g, b = arr[..., 3], arr[..., 1], arr[..., 2]
+    mx, mn = arr[..., :3].max(2), arr[..., :3].min(2)
+    sat = (mx - mn) / np.maximum(mx, 1)
+    cool = (al > 60) & (b > g + 12) & (sat > 0.30)
+
+    # Only the arrow region (lower-left); never the cool title text up top.
+    region = np.zeros_like(cool)
+    region[int(0.35 * h):int(0.85 * h), :int(0.30 * w)] = True
+    m = cool & region
+    cols = np.where(m.sum(axis=0) > 0)[0]
+    if len(cols) == 0:
+        return im
+    c0 = int(cols.min())
+    run = np.where(m[:, c0])[0]
+    if len(run) < 12:              # a natural pointed cap — nothing to heal
+        return im
+    r0, r1 = int(run.min()), int(run.max())
+    mid, rad = (r0 + r1) / 2.0, (r1 - r0) / 2.0 + 1.0
+
+    seg, segc = arr[r0:r1 + 1, c0:c0 + 6, :], m[r0:r1 + 1, c0:c0 + 6]
+    if not segc.any():
+        return im
+    colour = seg[segc].mean(axis=0)
+
+    yy, xx = np.mgrid[0:h, 0:w]
+    dist = np.sqrt((xx - c0) ** 2 + (yy - mid) ** 2)
+    cap = (xx <= c0) & (dist <= rad)
+    edge = np.clip(rad - dist, 0, 1)               # 1px antialiased rim
+    for ch in range(3):
+        arr[..., ch] = np.where(cap, colour[ch], arr[..., ch])
+    arr[..., 3] = np.where(cap, np.maximum(arr[..., 3], 255 * edge), arr[..., 3])
+    return Image.fromarray(arr.clip(0, 255).astype("uint8"), "RGBA")
+
+
 def recolor(im: Image.Image, stroke: tuple[int, int, int],
             accent: tuple[int, int, int]) -> Image.Image:
     src = np.array(im.convert("RGB")).astype(float) / 255.0
@@ -133,7 +181,7 @@ def main() -> None:
     IMAGES.mkdir(parents=True, exist_ok=True)
     for stroke, accent, name in ((STROKE_LIGHT, ACCENT_LIGHT, "main_concept.png"),
                                  (STROKE_DARK, ACCENT_DARK, "main_concept_dark.png")):
-        art = pad_canvas(recolor(panels, stroke, accent))
+        art = heal_left_barb(pad_canvas(recolor(panels, stroke, accent)))
         art.save(IMAGES / name)
         print(f"wrote {IMAGES / name}  ({art.size[0]}x{art.size[1]})")
 
