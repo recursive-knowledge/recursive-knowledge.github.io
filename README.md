@@ -75,8 +75,8 @@ cd knowledge-centric-self-improvement
 python3 scripts/make_concept_figure.py [path/to/paper/figures/main.pdf]
 ```
 
-It crops Figure 1 to its two concept panels (the third panel is the
-solve-rate-vs-cost scatter, which the Results section draws natively), then
+It keeps all three panels of Figure 1 (the two concept panels plus the
+solve-rate-vs-cost scatter, so the hero carries the headline result), then
 writes two theme variants: `static/images/main_concept.png` for light and
 `main_concept_dark.png` for dark. Both have a transparent background with the
 line art recolored to the theme's text token, so the figure sits on the page

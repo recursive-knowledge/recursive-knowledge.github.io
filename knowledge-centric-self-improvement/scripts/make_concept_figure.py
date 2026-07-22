@@ -2,8 +2,8 @@
 """Build the hero concept figure from the paper's Figure 1.
 
 The paper renders Figure 1 as three panels: agent-centric, knowledge-centric,
-and a solve-rate-vs-cost scatter. The site only wants the two concept panels —
-the scatter is already drawn natively in the Results section.
+and a solve-rate-vs-cost scatter. The hero uses all three, so the headline
+figure carries the result (Ours on the frontier) alongside the concept.
 
 A straight Ghostscript export is not enough on its own. The figure is light
 artwork (white background, grey title pills, navy line art) and the site
@@ -59,36 +59,18 @@ def render(pdf: Path, out: Path) -> None:
     )
 
 
-def crop_concept_panels(im: Image.Image) -> Image.Image:
-    """Trim to the two concept panels, dropping the scatter on the right."""
+def crop_figure(im: Image.Image) -> Image.Image:
+    """Trim the whitespace around the full three-panel figure.
+
+    Keeps all of Figure 1 &mdash; the two concept panels plus the solve-rate-vs-cost
+    scatter on the right &mdash; cropping only the surrounding transparent margin.
+    """
     lum = np.array(im.convert("RGB")).astype(int).mean(axis=2)
     dark = lum < 170
-
-    # The panels and the scatter are separated by a band with no dark content.
-    # Take the widest such band in the right half as the cut.
-    empty = [int(c) for c in np.where(dark.sum(axis=0) == 0)[0]]
-    bands: list[tuple[int, int]] = []
-    if empty:
-        start = prev = empty[0]
-        for c in empty[1:]:
-            if c != prev + 1:
-                bands.append((start, prev))
-                start = c
-            prev = c
-        bands.append((start, prev))
-
-    mid = lum.shape[1] // 2
-    gutters = [b for b in bands if b[0] > mid and b[1] < lum.shape[1] - 40]
-    if not gutters:
-        raise SystemExit("could not find the gutter before the scatter panel")
-    s, e = max(gutters, key=lambda b: b[1] - b[0])
-    cut = (s + e) // 2
-
-    region = dark[:, :cut]
-    rows, cols = np.where(region.sum(axis=1) > 0)[0], np.where(region.sum(axis=0) > 0)[0]
+    rows, cols = np.where(dark.sum(axis=1) > 0)[0], np.where(dark.sum(axis=0) > 0)[0]
     pad = 14
     return im.crop((max(cols.min() - pad, 0), max(rows.min() - pad, 0),
-                    min(cols.max() + pad + 1, cut), min(rows.max() + pad + 1, lum.shape[0])))
+                    min(cols.max() + pad + 1, lum.shape[1]), min(rows.max() + pad + 1, lum.shape[0])))
 
 
 def pad_canvas(im: Image.Image) -> Image.Image:
@@ -125,7 +107,7 @@ def main() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         raw = Path(tmp) / "main.png"
         render(pdf, raw)
-        panels = crop_concept_panels(Image.open(raw))
+        panels = crop_figure(Image.open(raw))
 
     IMAGES.mkdir(parents=True, exist_ok=True)
     for stroke, name in ((STROKE_LIGHT, "main_concept.png"),
