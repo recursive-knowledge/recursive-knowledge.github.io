@@ -67,11 +67,25 @@ JSON (and its transcript side-files) with the builders in
 
 ## Images
 
-The landing page renders `static/images/main_concept.png` and
-`static/images/main_scatter.png`; `static/images/main_full.png` is the
-social-card image (`og:image` / `twitter:image`). Regenerate any PNG from the
-paper PDFs with Ghostscript (transparent background; the CSS backs figures with
-a white card so they stay legible in both themes):
+The hero concept figure is the paper's Figure 1, built by
+`knowledge-centric-self-improvement/scripts/make_concept_figure.py`:
+
+```bash
+cd knowledge-centric-self-improvement
+python3 scripts/make_concept_figure.py [path/to/paper/figures/main.pdf]
+```
+
+It keeps all three panels of Figure 1 (the two concept panels plus the
+solve-rate-vs-cost scatter, so the hero carries the headline result), then
+writes two theme variants: `static/images/main_concept.png` for light and
+`main_concept_dark.png` for dark. Both have a transparent background with the
+line art recolored to the theme's text token, so the figure sits on the page
+instead of inside a light card — embedding the paper's artwork as-is puts a
+bright slab on the dark default theme. `.concept-art` in `style.css` swaps them
+on `[data-theme]`, so only the active variant is fetched.
+
+`static/images/main_full.png` is the social-card image (`og:image` /
+`twitter:image`). Other paper PNGs can be exported straight with Ghostscript:
 
 ```bash
 cd knowledge-centric-self-improvement/static/images
