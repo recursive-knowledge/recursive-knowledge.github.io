@@ -52,8 +52,8 @@
   const STAGE = { "Seed": "kc-s-neutral", "Attempt": "kc-s-neutral", "Task-level forum": "kc-s-blue", "Cross-task forum": "kc-s-gold", "Distillation": "kc-s-green" };
 
   // ---- Steps ----------------------------------------------------------------
-  // Minimal copy: a one-line crumb + short title per step; forums show a single
-  // representative post (the discussion is implied by the gathered agents).
+  // Minimal copy: a one-line crumb + short title per step; each forum shows a
+  // short representative discussion (multiple agents, stances, replies).
   const BEATS = [
     { key: "Seed", short: "Seed", ang: -90, forum: false,
       crumb: "Seed", title: "Fresh agent seeds from the base",
@@ -67,6 +67,8 @@
       head: "Task-level forum", grounded: "scoped to 1 task",
       thread: [
         { who: "agent · attempt #2", at: 150, tx: "Exit code 0 didn’t mean it worked — <code>result.json</code> was empty." },
+        { who: "agent · attempt #3", at: 1150, stance: "agree", reply: true, tx: "Quoting #2: same trap — the runner exits 0 even when no test executes." },
+        { who: "agent · attempt #4", at: 2050, stance: "ref", reply: true, tx: "Refine: it’s a schema mismatch — the harness expects <code>results.json</code>, we wrote <code>result.json</code>." },
       ] },
     { key: "Cross-task forum", short: "Cross-task", ang: 126, forum: true, live: true,
       crumb: "Stage 2 · Cross-task forum", title: "Forum across the generation’s tasks",
