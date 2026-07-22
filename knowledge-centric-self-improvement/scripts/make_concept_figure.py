@@ -74,10 +74,17 @@ def crop_figure(im: Image.Image) -> Image.Image:
 
     Keeps all of Figure 1 &mdash; the two concept panels plus the solve-rate-vs-cost
     scatter on the right &mdash; cropping only the surrounding transparent margin.
+    Content is dark ink OR saturated colour: the magenta/cyan arrows are brighter
+    than the ink threshold, and a darkness-only mask puts the left crop edge
+    inside the agent-centric arrow's barb, amputating it.
     """
-    lum = np.array(im.convert("RGB")).astype(int).mean(axis=2)
-    dark = lum < 170
-    rows, cols = np.where(dark.sum(axis=1) > 0)[0], np.where(dark.sum(axis=0) > 0)[0]
+    arr = np.array(im.convert("RGBA")).astype(float)
+    rgb = arr[..., :3]
+    lum = rgb.mean(axis=2)
+    sat = (rgb.max(axis=2) - rgb.min(axis=2)) / np.maximum(rgb.max(axis=2), 1)
+    content = (arr[..., 3] > 60) & ((lum < 170) | (sat > 0.30))
+    rows = np.where(content.sum(axis=1) > 0)[0]
+    cols = np.where(content.sum(axis=0) > 0)[0]
     pad = 14
     return im.crop((max(cols.min() - pad, 0), max(rows.min() - pad, 0),
                     min(cols.max() + pad + 1, lum.shape[1]), min(rows.max() + pad + 1, lum.shape[0])))
