@@ -133,9 +133,12 @@
 
     // nodes
     const nodesG = el("g", { class: "kc-nodes" });
-    S.nodes = BEATS.map((b) => {
+    S.nodes = BEATS.map((b, i) => {
       const p = polar(b.ang, R);
-      const g = el("g", { class: "kc-node" + (b.forum ? " isforum" : "") + (STAGE[b.key] ? " " + STAGE[b.key] : ""), transform: `translate(${p.x},${p.y})` });
+      const g = el("g", { class: "kc-node" + (b.forum ? " isforum" : "") + (STAGE[b.key] ? " " + STAGE[b.key] : ""), transform: `translate(${p.x},${p.y})`, role: "button", tabindex: "0", "aria-label": "Jump to step: " + b.key });
+      // The node circles are clickable too, not just the step tabs above.
+      g.addEventListener("click", () => seekBeat(i));
+      g.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); seekBeat(i); } });
       g.appendChild(el("circle", { class: "ring2", r: 27 }));
       g.appendChild(el("circle", { class: "nbg", r: 23 }));
       g.appendChild(icon(b.key));
