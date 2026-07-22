@@ -139,6 +139,11 @@
       // The node circles are clickable too, not just the step tabs above.
       g.addEventListener("click", () => seekBeat(i));
       g.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); seekBeat(i); } });
+      // A transparent hit-disc gives every node the SAME circular click target,
+      // independent of where its label sits (left/right/centred). Without it the
+      // clickable area is the union of the painted disc + the off-centre label,
+      // so a side with no label (e.g. Attempt's left) reads as dead.
+      g.appendChild(el("circle", { class: "kc-hit", r: 28, fill: "transparent" }));
       g.appendChild(el("circle", { class: "ring2", r: 27 }));
       g.appendChild(el("circle", { class: "nbg", r: 23 }));
       g.appendChild(icon(b.key));
