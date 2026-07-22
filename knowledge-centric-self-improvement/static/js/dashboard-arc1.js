@@ -27,7 +27,6 @@
     payload: null,
     knowledge: null,
     activeTab: "solved",
-    statusFilter: "all",      // all | resolved | failed | infra
     search: "",
     selectedGen: null,
     selectedEvolvingGen: null,
@@ -292,13 +291,12 @@
   };
 
   const renderEvolvingKnowledge = async () => {
-    const chooser  = $("#ek-gen-chooser");
     const metaHost = $("#ek-meta");
     const addedHost  = $("#ek-added-body");
     const solvesHost = $("#ek-solves-body");
-    if (!chooser || !addedHost || !solvesHost) return;
+    if (!addedHost || !solvesHost) return;
 
-    clear(chooser); clear(metaHost); clear(addedHost); clear(solvesHost);
+    clear(metaHost); clear(addedHost); clear(solvesHost);
     addedHost.appendChild(el("div", { class: "loading" }, "Loading curated knowledge…"));
 
     const k = await ensureKnowledgeLoaded();
@@ -318,15 +316,6 @@
       const firstWithSolves = (state.payload.generations || []).find((g) => (g.newly_solved || []).length > 0);
       state.selectedEvolvingGen = firstWithSolves ? firstWithSolves.gen : gens[0];
     }
-    chooser.appendChild(el("span", { class: "gen-chooser-label" }, "Generation:"));
-    for (const g of gens) {
-      const isActive = g === state.selectedEvolvingGen;
-      chooser.appendChild(el("button", {
-        class: "pill" + (isActive ? " active" : ""),
-        onclick: () => setSelectedEvolvingGen(g),
-      }, `G${g}`));
-    }
-
     const slot = k.generations.find((x) => x.gen === state.selectedEvolvingGen);
     const delta = slot?.cross_task_distill_delta || {};
 
@@ -398,7 +387,6 @@
     const q = state.search.trim().toLowerCase();
     const out = [];
     for (const [tid, t] of Object.entries(tasks)) {
-      if (state.statusFilter !== "all" && classifyStatus(t) !== state.statusFilter) continue;
       if (q && !tid.toLowerCase().includes(q)) continue;
       if (state.selectedGen != null) {
         const here = (t.per_gen || []).some((g) => g.gen === state.selectedGen);
@@ -564,14 +552,7 @@
 
   // ====================================================================== Pill / tab counts
   const updatePillCounts = () => {
-    const counts = { resolved: 0, failed: 0, infra: 0 };
-    for (const t of Object.values(state.payload.tasks || {})) counts[classifyStatus(t)]++;
     const setCount = (sel, v) => { const e = $(sel); if (e) e.textContent = v; };
-    setCount("[data-status='all'] .pill-count",      state.payload.total_tasks || 0);
-    setCount("[data-status='resolved'] .pill-count", counts.resolved);
-    setCount("[data-status='failed'] .pill-count",   counts.failed);
-    setCount("[data-status='infra'] .pill-count",    counts.infra);
-
     const filtered = filteredTasks();
     setCount("#tab-count-solved",   filtered.filter((t) => t.resolved).length);
     setCount("#tab-count-unsolved", filtered.filter((t) => !t.resolved).length);
@@ -618,13 +599,6 @@
     if (searchInput) searchInput.addEventListener("input", (e) => {
       state.search = e.target.value; onFiltersChanged();
     });
-    for (const pill of $$(".pill[data-status]")) {
-      pill.addEventListener("click", () => {
-        state.statusFilter = pill.dataset.status;
-        for (const p of $$(".pill[data-status]")) p.classList.toggle("active", p === pill);
-        onFiltersChanged();
-      });
-    }
     const tabBtns = $$(".tab-btn");
     tabBtns.forEach((b, i) => {
       b.addEventListener("click", () => setActiveTab(b.dataset.tab));
@@ -656,7 +630,6 @@
     const host = $("#meta-row");
     clear(host);
     const pill = (label, value) => host.appendChild(el("span", { class: "meta-pill" }, `${label}: ${value}`));
-    pill("Experiment", p.experiment);
     pill("Model", p.model);
     pill("Tasks", p.total_tasks);
     if ((p.generations || []).length) pill("Generations", p.generations.length);

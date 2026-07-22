@@ -1,6 +1,6 @@
 /* Main-page generation explorer.
  * Native, lightweight view over the same JSON used by the full dashboards.
- * It intentionally shows only cumulative progress, then maps the selected
+ * It shows a generation picker and maps the selected
  * generation onto the paper figure's three artifact types:
  * task-level evidence -> cross-task synthesis -> distilled bundle.
  */
@@ -13,12 +13,6 @@
       dataUrl: "static/data/tb2_haiku.json",
       fullUrl: "tb2-haiku/",
       taskNoun: "task",
-    },
-    arc1: {
-      label: "ARC-AGI-1",
-      dataUrl: "static/data/arc1_haiku.json",
-      fullUrl: "arc1-haiku/",
-      taskNoun: "puzzle",
     },
   };
 
@@ -50,7 +44,6 @@
   };
   const clear = (node) => { while (node && node.firstChild) node.removeChild(node.firstChild); };
   const pct = (n) => `${(n || 0).toFixed(1)}%`;
-  const cssVar = (name, fallback) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
 
   const cleanText = (s, max) => {
     if (!s) return "";
@@ -102,91 +95,6 @@
       host.appendChild(el("div", { class: "empty", text: "No generation data." }));
       return;
     }
-
-    const total = data.total_tasks || Math.max(...gens.map((g) => g.cumulative || 0), 1);
-    const W = 760, H = 174;
-    const m = { l: 42, r: 22, t: 18, b: 45 };
-    const iw = W - m.l - m.r, ih = H - m.t - m.b;
-    const x = (i) => m.l + (gens.length === 1 ? iw / 2 : (i / (gens.length - 1)) * iw);
-    const y = (g) => m.t + ih - ((g.cumulative || 0) / total) * ih;
-    const points = gens.map((g, i) => `${x(i)},${y(g)}`).join(" ");
-    const accent = cssVar("--color-accent-hover", "#4334b8");
-    const muted = cssVar("--color-text-secondary", "#62626a");
-    const border = cssVar("--color-border", "#e3e2ec");
-
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-    svg.setAttribute("role", "img");
-    svg.setAttribute("aria-label", "Cumulative solved tasks over generations");
-
-    [0, 0.5, 1].forEach((f) => {
-      const yy = m.t + ih - f * ih;
-      const line = document.createElementNS(svg.namespaceURI, "line");
-      line.setAttribute("x1", m.l);
-      line.setAttribute("x2", W - m.r);
-      line.setAttribute("y1", yy);
-      line.setAttribute("y2", yy);
-      line.setAttribute("stroke", border);
-      line.setAttribute("stroke-width", "1");
-      svg.appendChild(line);
-
-      const label = document.createElementNS(svg.namespaceURI, "text");
-      label.setAttribute("x", m.l - 8);
-      label.setAttribute("y", yy + 4);
-      label.setAttribute("text-anchor", "end");
-      label.setAttribute("fill", muted);
-      label.setAttribute("font-size", "10");
-      label.textContent = Math.round(f * total);
-      svg.appendChild(label);
-    });
-
-    const poly = document.createElementNS(svg.namespaceURI, "polyline");
-    poly.setAttribute("points", points);
-    poly.setAttribute("fill", "none");
-    poly.setAttribute("stroke", accent);
-    poly.setAttribute("stroke-width", "2.5");
-    poly.setAttribute("stroke-linecap", "round");
-    poly.setAttribute("stroke-linejoin", "round");
-    svg.appendChild(poly);
-
-    gens.forEach((g, i) => {
-      const selected = g.gen === state.selectedGen;
-      const group = document.createElementNS(svg.namespaceURI, "g");
-      group.setAttribute("class", selected ? "is-selected" : "");
-
-      const dot = document.createElementNS(svg.namespaceURI, "circle");
-      dot.setAttribute("cx", x(i));
-      dot.setAttribute("cy", y(g));
-      dot.setAttribute("r", selected ? "5.5" : "4");
-      dot.setAttribute("fill", selected ? accent : "#fff");
-      dot.setAttribute("stroke", accent);
-      dot.setAttribute("stroke-width", selected ? "2.2" : "1.8");
-      group.appendChild(dot);
-
-      const value = document.createElementNS(svg.namespaceURI, "text");
-      value.setAttribute("x", x(i));
-      value.setAttribute("y", y(g) - 10);
-      value.setAttribute("text-anchor", "middle");
-      value.setAttribute("fill", selected ? accent : muted);
-      value.setAttribute("font-size", selected ? "11" : "10");
-      value.setAttribute("font-weight", selected ? "700" : "600");
-      value.textContent = g.cumulative || 0;
-      group.appendChild(value);
-
-      const genLabel = document.createElementNS(svg.namespaceURI, "text");
-      genLabel.setAttribute("x", x(i));
-      genLabel.setAttribute("y", H - 16);
-      genLabel.setAttribute("text-anchor", "middle");
-      genLabel.setAttribute("fill", selected ? accent : muted);
-      genLabel.setAttribute("font-size", "10");
-      genLabel.setAttribute("font-weight", selected ? "700" : "500");
-      genLabel.textContent = `G${g.gen}`;
-      group.appendChild(genLabel);
-
-      svg.appendChild(group);
-    });
-
-    host.appendChild(svg);
 
     const picks = el("div", { class: "generation-picks", role: "group", "aria-label": "Select generation" });
     gens.forEach((g) => {
@@ -275,25 +183,6 @@
       if (figure) figure.classList.remove("is-loading");
     }
   };
-
-  $$(".generation-tab").forEach((tab) => {
-    tab.addEventListener("click", () => activateBench(tab.dataset.bench));
-  });
-
-  if (typeof ResizeObserver === "function") {
-    const ro = new ResizeObserver(() => {
-      const data = state.cache[state.bench];
-      if (data) renderTimeline(data);
-    });
-    const host = $("#generation-timeline");
-    if (host) ro.observe(host);
-  }
-  if (typeof MutationObserver === "function") {
-    new MutationObserver(() => {
-      const data = state.cache[state.bench];
-      if (data) renderTimeline(data);
-    }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-  }
 
   activateBench(state.bench);
 })();
