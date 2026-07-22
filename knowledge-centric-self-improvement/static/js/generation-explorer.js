@@ -172,7 +172,7 @@
       const data = await loadBench(bench);
       const gens = data.generations || [];
       if (!gens.some((g) => g.gen === state.selectedGen)) {
-        state.selectedGen = gens.length ? gens[gens.length - 1].gen : 1;
+        state.selectedGen = gens.length ? gens[0].gen : 1;
       }
       render(data);
     } catch (err) {
